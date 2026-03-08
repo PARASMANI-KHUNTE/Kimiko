@@ -163,8 +163,7 @@ class TokenManager:
         """Get the full budget allocation for a model, ensuring total fits window.
         
         Implements Dynamic Budgeting:
-        - History scales inversely with Knowledge
-        - Images account for fixed token usage
+        - History budget scales inversely with Image tokens (ratio-based sizing).
         """
         budget = self.get_budget(model)
         window = budget.pop("context_window")
@@ -172,24 +171,39 @@ class TokenManager:
         # Account for images if any
         image_tokens = image_count * self.IMAGE_TOKEN_ESTIMATE
         
-        # Dynamic Scaling: History scales inversely with Knowledge
-        if knowledge_tokens > 0 or image_tokens > 0:
-            retrieval_limit = budget.get("retrieval", 1000)
+        # Dynamic Scaling: Shrink history budget based on image token ratio
+        if image_tokens > 0:
+            base_history = budget.get("history", 1500)
+            # Prevent negative ratio if images exceed context window (clamped)
+            ratio = max(0.1, 1.0 - (image_tokens / window))
+            budget["history"] = int(base_history * ratio)
             
-            # If we have images, reduce history/retrieval proportional to image load
-            # For simplicity, we just subtract from window later, but we should 
-            # ensure enough space is left.
-            pass
+            # Reduce retrieval slightly as well if image load is massive
+            if image_tokens > (window * 0.3):
+                base_retrieval = budget.get("retrieval", 1000)
+                budget["retrieval"] = int(base_retrieval * ratio)
 
-        # Ensure allocations don't exceed window
-        total_allocated = sum(budget.values())
+        # Ensure allocations don't exceed remaining window
+        total_allocated = sum(budget.values()) + image_tokens
         if total_allocated > window:
-            scale = window / total_allocated
-            budget = {k: int(v * scale) for k, v in budget.items()}
+            # Scale down non-system components if we are still overflowing
+            reserved = budget.get("system", 400) + image_tokens
+            if reserved < window:
+                scale = (window - reserved) / max(1, total_allocated - reserved)
+                for k in budget:
+                    if k != "system":
+                        budget[k] = max(100, int(budget[k] * scale))
+            else:
+                # If images alone exceed window, we have bigger problems, just slash everything
+                for k in budget:
+                    if k != "system":
+                        budget[k] = 100
+                        
             logger.warning(
                 "budget_scaled_down",
                 model=model,
                 window=window,
+                image_tokens=image_tokens,
                 original_total=total_allocated,
             )
 

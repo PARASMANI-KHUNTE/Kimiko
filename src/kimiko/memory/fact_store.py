@@ -86,27 +86,33 @@ class FactStore:
     async def apply_decay(self, user_id: str) -> int:
         """Apply passive decay to all facts for a user.
         
-        Use this to simulate forgetting non-reinforced knowledge.
+        Uses exponential formula: confidence = confidence * exp(-decay_rate * days_since_seen).
+        Enforces a MIN_CONFIDENCE floor so core knowledge is never fully deleted.
         """
-        user_uuid = uuid.UUID(user_id)
-        # Decay facts
-        stmt = (
-            update(UserFact)
-            .where(UserFact.user_id == user_uuid)
-            .values(confidence_score=UserFact.confidence_score - DECAY_RATE)
-        )
-        await self.session.execute(stmt)
+        import math
         
-        # Cleanup very low confidence facts
-        cleanup_stmt = delete(UserFact).where(
-            and_(
-                UserFact.user_id == user_uuid,
-                UserFact.confidence_score < MIN_CONFIDENCE
-            )
-        )
-        res = await self.session.execute(cleanup_stmt)
+        user_uuid = uuid.UUID(user_id)
+        
+        # Fetch all facts to safely calculate timedelta
+        stmt = select(UserFact).where(UserFact.user_id == user_uuid)
+        result = await self.session.execute(stmt)
+        facts = result.scalars().all()
+        
+        now = datetime.now(timezone.utc)
+        decayed_count = 0
+        
+        for fact in facts:
+            # Ensure timezone awareness
+            last_seen = fact.last_seen.replace(tzinfo=timezone.utc) if fact.last_seen.tzinfo is None else fact.last_seen
+            days_since = max(0, (now - last_seen).days)
+            
+            if days_since > 0:
+                new_conf = fact.confidence_score * math.exp(-DECAY_RATE * days_since)
+                # Keep floor so facts don't permanently disappear
+                fact.confidence_score = max(MIN_CONFIDENCE, new_conf)
+                decayed_count += 1
+                
         await self.session.commit()
         
-        deleted_count = res.rowcount
-        logger.info("fact_decay_applied", user_id=user_id, forgotten_count=deleted_count)
-        return deleted_count
+        logger.info("fact_decay_applied", user_id=user_id, decayed_count=decayed_count)
+        return decayed_count

@@ -27,3 +27,4 @@ class AgentState(TypedDict):
     observation: Optional[str]
     step_count: int
     max_steps: int
+    images: Optional[List[str]]

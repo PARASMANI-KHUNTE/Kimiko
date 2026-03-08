@@ -97,6 +97,11 @@ class RetrievalRanker:
                 + self.tag_weight * tag_score
                 + self.importance_weight * importance_score
             )
+            
+            # Phase 3.5: Priority Boost for identity and preference facts
+            fact_category = item.get("category")
+            if fact_category in ("identity", "preference"):
+                final_score += 1.5
 
             scored_item = {**item, "final_score": final_score}
             scored.append(scored_item)

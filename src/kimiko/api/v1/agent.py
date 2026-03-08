@@ -35,8 +35,14 @@ async def run_agent_task(
         if body.max_steps:
             orchestrator.agent_engine.max_steps = body.max_steps
             
+        if body.images:
+            await orchestrator.scheduler.schedule_vision(orchestrator.vision_engine.get_vision_model())
+        else:
+            await orchestrator.scheduler.schedule_chat("qwen2.5")
+            
         answer = await orchestrator.agent_engine.run(
             goal=body.goal,
+            images=body.images
             # history=history # TODO: Load history from memory
         )
         

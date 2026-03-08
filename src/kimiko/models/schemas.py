@@ -148,6 +148,7 @@ class RetrievalResult(BaseModel):
 
 class AgentTaskRequest(BaseModel):
     goal: str = Field(..., min_length=5)
+    images: list[str] | None = None  # Phase 3.5: Multimodal Agent
     session_id: str | None = None
     user_id: str | None = None
     max_steps: int = Field(default=5, ge=1, le=10)

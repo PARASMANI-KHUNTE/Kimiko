@@ -7,7 +7,7 @@ import re
 from typing import Any, Dict, List, Optional, Union
 
 import structlog
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from langgraph.graph import END, StateGraph
 
 from kimiko.agents.prompts import REACT_SYSTEM_PROMPT, TOOL_TEMPLATE
@@ -98,11 +98,20 @@ class AgentEngine:
         
         logger.info("agent_reasoning_start", step=state["step_count"] + 1)
         
-        # Execute LLM
-        # For Phase 1 we use ollama directly, later we can use ChatOllama
+        model_name = state.get("model", "qwen2.5")
+        if state.get("images"):
+            # Phase 3.5: Multimodal prompt mapping
+            prompt_payload = {
+                "prompt": prompt,
+                "images": state["images"]
+            }
+            model_name = "qwen2-vl"
+        else:
+            prompt_payload = prompt
+            
         response = await llm.generate(
-            model="qwen2.5", # TODO: Use model from state
-            prompt=prompt,
+            model=model_name,
+            prompt=prompt_payload,
         )
         
         text = response.get("response", "")
@@ -175,7 +184,7 @@ class AgentEngine:
             "messages": [obs_msg]
         }
 
-    async def run(self, goal: str, history: List[BaseMessage] | None = None) -> str:
+    async def run(self, goal: str, history: List[BaseMessage] | None = None, images: list[str] | None = None) -> str:
         """Run the agent until it reaches a conclusion or max steps."""
         initial_state: AgentState = {
             "messages": (history or []) + [HumanMessage(content=goal)],
@@ -184,7 +193,8 @@ class AgentEngine:
             "action": None,
             "observation": None,
             "step_count": 0,
-            "max_steps": self.max_steps
+            "max_steps": self.max_steps,
+            "images": images or []
         }
         
         final_state = await self._graph.ainvoke(initial_state)

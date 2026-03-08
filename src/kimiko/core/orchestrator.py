@@ -63,6 +63,9 @@ class RequestOrchestrator:
         
         self.agent_engine = AgentEngine(registry)
         self.vision_engine = VisionEngine()
+        
+        from kimiko.services.model_scheduler import ModelScheduler
+        self.scheduler = ModelScheduler()
 
     async def process(
         self,
@@ -138,6 +141,12 @@ class RequestOrchestrator:
 
         # 7. Execute LLM
         try:
+            # Phase 3.5: Schedule Models to prevent VRAM overflow
+            if request.images:
+                await self.scheduler.schedule_vision(model)
+            else:
+                await self.scheduler.schedule_chat(model)
+
             with LLM_GENERATION_DURATION.labels(model=model).time():
                 llm = get_llm_service()
                 
@@ -236,6 +245,11 @@ class RequestOrchestrator:
         )
 
         # Stream from LLM
+        if request.images:
+            await self.scheduler.schedule_vision(model)
+        else:
+            await self.scheduler.schedule_chat(model)
+            
         llm = get_llm_service()
         token_stream = llm.stream(
             model=model,

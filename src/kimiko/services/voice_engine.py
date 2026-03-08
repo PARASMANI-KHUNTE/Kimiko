@@ -49,6 +49,12 @@ class VoiceEngine:
             text += segment.text + " "
             
         logger.info("transcription_complete", language=info.language, probability=info.language_probability)
+        
+        # Phase 3.5: Release VRAM
+        self._stt_model = None
+        import gc
+        gc.collect()
+        
         return text.strip()
 
     async def synthesize(self, text: str) -> AsyncIterator[bytes]:
