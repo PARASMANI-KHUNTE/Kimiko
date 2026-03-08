@@ -41,17 +41,20 @@ class StreamEventType(str, Enum):
 
 
 class Message(BaseModel):
-    role: Role
+    role: str
     content: str
+    images: list[str] | None = None  # Base64 encoded images
     timestamp: datetime | None = None
 
 
 class ChatRequest(BaseModel):
-    messages: list[Message] = Field(..., min_length=1)
-    model: str | None = None
-    stream: bool = False
+    message: str
     session_id: str | None = None
     user_id: str | None = None
+    model: str = "qwen2.5"
+    stream: bool = False
+    context_tags: list[str] | None = None
+    images: list[str] | None = None  # Images for current turn
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = None
 
@@ -135,8 +138,9 @@ class RetrievalResult(BaseModel):
     text: str
     score: float
     importance: float = 0.5
+    confidence: float = 1.0  # Phase 3
     source: str  # "semantic", "long_term", "short_term"
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[str, Any] = {}
 
 
 # ── Agent Task ──
@@ -164,6 +168,26 @@ class DocumentIngestResponse(BaseModel):
     status: str
     document_name: str
     chunks_indexed: int
+
+
+# ── User Facts ──
+
+
+class UserFactBase(BaseModel):
+    category: str
+    fact: str
+    importance: float = 0.5
+
+
+class UserFactCreate(UserFactBase):
+    user_id: str
+
+
+class UserFactResponse(UserFactBase):
+    id: str
+    confidence_score: float
+    verification_count: int
+    last_seen: datetime
 
 
 # ── Health ──

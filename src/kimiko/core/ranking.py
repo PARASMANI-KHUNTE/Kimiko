@@ -12,10 +12,11 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 # ── Weights (Fix #3 review round 3) ──
-SEMANTIC_WEIGHT = 0.6
+SEMANTIC_WEIGHT = 0.55
 RECENCY_WEIGHT = 0.2
 TAG_MATCH_WEIGHT = 0.1
 IMPORTANCE_WEIGHT = 0.1
+FACT_CONFIDENCE_WEIGHT = 0.05
 
 # How quickly recency decays (seconds). Memories older than this get score ~0.
 RECENCY_DECAY_SECONDS = 7 * 24 * 3600  # 7 days
@@ -30,12 +31,14 @@ class RetrievalRanker:
         recency_weight: float = RECENCY_WEIGHT,
         tag_weight: float = TAG_MATCH_WEIGHT,
         importance_weight: float = IMPORTANCE_WEIGHT,
+        fact_confidence_weight: float = FACT_CONFIDENCE_WEIGHT,
         recency_decay: float = RECENCY_DECAY_SECONDS,
     ) -> None:
         self.semantic_weight = semantic_weight
         self.recency_weight = recency_weight
         self.tag_weight = tag_weight
         self.importance_weight = importance_weight
+        self.fact_confidence_weight = fact_confidence_weight
         self.recency_decay = recency_decay
 
     def compute_recency_score(self, timestamp: float) -> float:

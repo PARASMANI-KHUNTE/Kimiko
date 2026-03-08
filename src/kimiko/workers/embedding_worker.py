@@ -31,6 +31,7 @@ def embed_and_index(
 
 
 async def _async_embed_and_index(
+    text: str,
     user_id: str,
     tags: list[str] | None,
     memory_type: str,

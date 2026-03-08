@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 import structlog
+from typing import Union
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -44,7 +45,7 @@ class BaseLLMService(ABC):
     async def generate(
         self,
         model: str,
-        prompt: str,
+        prompt: Union[str, dict[str, Any]],
         *,
         system: str | None = None,
         temperature: float = 0.7,
@@ -57,7 +58,7 @@ class BaseLLMService(ABC):
     async def stream(
         self,
         model: str,
-        prompt: str,
+        prompt: Union[str, dict[str, Any]],
         *,
         system: str | None = None,
         temperature: float = 0.7,
@@ -118,12 +119,21 @@ class OllamaService(BaseLLMService):
         max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Generate a complete (non-streaming) response from Ollama."""
+        # Handle multimodal prompt
+        actual_prompt = prompt
+        images = None
+        if isinstance(prompt, dict):
+            actual_prompt = prompt.get("prompt", "")
+            images = prompt.get("images")
+
         payload: dict[str, Any] = {
             "model": model,
-            "prompt": prompt,
+            "prompt": actual_prompt,
             "stream": False,
             "options": {"temperature": temperature},
         }
+        if images:
+            payload["images"] = images
         if system:
             payload["system"] = system
         if max_tokens:
@@ -158,12 +168,21 @@ class OllamaService(BaseLLMService):
         max_tokens: int | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens from Ollama. Yields individual token strings."""
+        # Handle multimodal prompt
+        actual_prompt = prompt
+        images = None
+        if isinstance(prompt, dict):
+            actual_prompt = prompt.get("prompt", "")
+            images = prompt.get("images")
+
         payload: dict[str, Any] = {
             "model": model,
-            "prompt": prompt,
+            "prompt": actual_prompt,
             "stream": True,
             "options": {"temperature": temperature},
         }
+        if images:
+            payload["images"] = images
         if system:
             payload["system"] = system
         if max_tokens:

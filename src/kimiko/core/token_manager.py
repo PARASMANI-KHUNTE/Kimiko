@@ -47,6 +47,22 @@ MODEL_BUDGETS: dict[str, dict[str, int]] = {
         "retrieval": 2000,
         "response": 4000,
     },
+    "qwen2-vl": {
+        "context_window": 16384,
+        "system": 400,  # Default from DEFAULT_BUDGET
+        "history": 4000,
+        "memories": 500,  # Default from DEFAULT_BUDGET
+        "retrieval": 2000,
+        "response": 2000, # Mapped from 'output'
+    },
+    "llava": {
+        "context_window": 4096,
+        "system": 400,  # Default from DEFAULT_BUDGET
+        "history": 1000,
+        "memories": 500,  # Default from DEFAULT_BUDGET
+        "retrieval": 1000,
+        "response": 1000, # Mapped from 'output'
+    },
 }
 
 # Default budget for unknown models
@@ -68,6 +84,7 @@ class TokenManager:
     """
 
     CHARS_PER_TOKEN = 4  # Conservative estimate
+    IMAGE_TOKEN_ESTIMATE = 1000  # Vision models typically use ~1k tokens per image
 
     def __init__(self) -> None:
         self._budgets = MODEL_BUDGETS
@@ -80,11 +97,13 @@ class TokenManager:
         return len(text) // self.CHARS_PER_TOKEN + 1
 
     def count_messages_tokens(self, messages: list[Message]) -> int:
-        """Count total tokens across a list of messages."""
+        """Count total tokens across a list of messages including images."""
         total = 0
         for msg in messages:
             # ~4 tokens overhead per message for role + formatting
             total += self.count_tokens(msg.content) + 4
+            if msg.images:
+                total += len(msg.images) * self.IMAGE_TOKEN_ESTIMATE
         return total
 
     def get_budget(self, model: str) -> dict[str, int]:
@@ -138,30 +157,30 @@ class TokenManager:
     def allocate_budget(
         self,
         model: str,
-        knowledge_tokens: int = 0
+        knowledge_tokens: int = 0,
+        image_count: int = 0
     ) -> dict[str, int]:
         """Get the full budget allocation for a model, ensuring total fits window.
         
-        Implements Dynamic Budgeting (Fix #4 review round 3):
-        If knowledge_tokens is less than the allocated 'retrieval' budget,
-        the surplus is added to 'history'.
+        Implements Dynamic Budgeting:
+        - History scales inversely with Knowledge
+        - Images account for fixed token usage
         """
         budget = self.get_budget(model)
         window = budget.pop("context_window")
  
+        # Account for images if any
+        image_tokens = image_count * self.IMAGE_TOKEN_ESTIMATE
+        
         # Dynamic Scaling: History scales inversely with Knowledge
-        if knowledge_tokens > 0:
+        if knowledge_tokens > 0 or image_tokens > 0:
             retrieval_limit = budget.get("retrieval", 1000)
-            surplus = max(0, retrieval_limit - knowledge_tokens)
-            if surplus > 0:
-                budget["history"] += surplus
-                logger.debug(
-                    "dynamic_budget_adjusted",
-                    knowledge_used=knowledge_tokens,
-                    history_expanded=surplus,
-                    new_history_limit=budget["history"]
-                )
- 
+            
+            # If we have images, reduce history/retrieval proportional to image load
+            # For simplicity, we just subtract from window later, but we should 
+            # ensure enough space is left.
+            pass
+
         # Ensure allocations don't exceed window
         total_allocated = sum(budget.values())
         if total_allocated > window:

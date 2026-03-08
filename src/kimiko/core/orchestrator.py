@@ -24,6 +24,7 @@ from kimiko.core.streaming import StreamingEngine
 from kimiko.core.token_manager import TokenManager
 from kimiko.memory.document_engine import DocumentEngine
 from kimiko.memory.manager import MemoryManager
+from kimiko.services.vision_engine import VisionEngine
 from kimiko.models.schemas import (
     ChatRequest,
     ChatResponse,
@@ -61,6 +62,7 @@ class RequestOrchestrator:
         registry.register(WebSearchTool())
         
         self.agent_engine = AgentEngine(registry)
+        self.vision_engine = VisionEngine()
 
     async def process(
         self,
@@ -85,7 +87,7 @@ class RequestOrchestrator:
         start_time = time.time()
 
         # Extract user message (last message in the list)
-        user_message = request.messages[-1].content
+        user_message = request.message
         session_id = request.session_id or request_id
 
         logger.info(
@@ -100,6 +102,7 @@ class RequestOrchestrator:
             session_id,
             Message(role=Role.USER, content=user_message),
             request_id=request_id,
+            user_id=request.user_id
         )
 
         # 2. Classify intent
@@ -111,12 +114,13 @@ class RequestOrchestrator:
             preferred_model=request.model,
         )
 
-        # 4. Retrieve context
+        # 4. Retrieval step
         retrieval_results = await self.retrieval_engine.retrieve(
             query=user_message,
             session_id=session_id,
             user_id=request.user_id,
             db=db,
+            top_k=10,
         )
 
         # 5. Get conversation history + summary
@@ -136,6 +140,9 @@ class RequestOrchestrator:
         try:
             with LLM_GENERATION_DURATION.labels(model=model).time():
                 llm = get_llm_service()
+                
+                # Handle multimodal prompt dict or string
+                # The LLMService is expected to handle the dict format directly
                 result = await llm.generate(
                     model=model,
                     prompt=prompt,
@@ -154,6 +161,7 @@ class RequestOrchestrator:
             session_id,
             Message(role=Role.ASSISTANT, content=response_text),
             request_id=request_id,
+            user_id=request.user_id
         )
 
         # 9. Build response
@@ -190,7 +198,7 @@ class RequestOrchestrator:
         Same pipeline as process(), but streams LLM tokens via SSE.
         """
         request_id = request_id or str(uuid.uuid4())[:8]
-        user_message = request.messages[-1].content
+        user_message = request.message
         session_id = request.session_id or request_id
 
         # Store user message

@@ -42,10 +42,11 @@ class ContextBuilder:
         retrieval_results: list[RetrievalResult] | None = None,
         conversation_summary: str | None = None,
         system_prompt: str | None = None,
-    ) -> str:
+        images: list[str] | None = None,
+    ) -> Union[str, dict[str, Any]]:
         """Build the complete prompt with token budgeting.
-
-        Returns a single formatted prompt string ready for LLM consumption.
+        
+        Returns a prompt string OR a dict for multimodal models.
         """
         # 0. Pre-calculate Retrieval Tokens for Dynamic Budgeting
         retrieval_tokens = 0
@@ -53,7 +54,11 @@ class ContextBuilder:
             for r in retrieval_results:
                 retrieval_tokens += self.token_manager.count_tokens(r.text)
  
-        budget = self.token_manager.allocate_budget(model, knowledge_tokens=retrieval_tokens)
+        budget = self.token_manager.allocate_budget(
+            model, 
+            knowledge_tokens=retrieval_tokens,
+            image_count=len(images) if images else 0
+        )
         system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
         sections: list[str] = []
@@ -62,14 +67,21 @@ class ContextBuilder:
         sys_text = self.token_manager.truncate_text(system_prompt, budget.get("system", 400))
         sections.append(sys_text)
 
-        # 2. Retrieved knowledge / memories
+        # 2. Retrieved knowledge / facts / memories
         if retrieval_results:
-            knowledge_texts = [r.text for r in retrieval_results]
-            knowledge_section = self._build_knowledge_section(
-                knowledge_texts, budget.get("memories", 500)
-            )
-            if knowledge_section:
-                sections.append(knowledge_section)
+            facts = [r.text for r in retrieval_results if r.source == "fact_store"]
+            memories = [r.text for r in retrieval_results if r.source != "fact_store"]
+            
+            if facts:
+                fact_section = "\n".join([f"- {f}" for f in facts])
+                sections.append(f"### [USER FACTS]\n{fact_section}")
+
+            if memories:
+                knowledge_section = self._build_knowledge_section(
+                    memories, budget.get("memories", 500)
+                )
+                if knowledge_section:
+                    sections.append(knowledge_section)
 
         # 3. Conversation summary (if previous conversation was compressed)
         if conversation_summary:
@@ -92,6 +104,14 @@ class ContextBuilder:
         sections.append(f"User: {user_message}")
 
         prompt = "\n\n".join(sections)
+        
+        # If images are present, return a structured prompt for LLMService
+        if images:
+            return {
+                "prompt": prompt,
+                "images": images
+            }
+
         total_tokens = self.token_manager.count_tokens(prompt)
 
         logger.info(

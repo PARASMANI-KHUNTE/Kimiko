@@ -28,3 +28,8 @@ celery_app.conf.update(
     task_time_limit=300,  # 5 minute max per task
     worker_prefetch_multiplier=1,
 )
+
+# ── Import Workers to Register Tasks ──
+import kimiko.workers.embedding_worker
+import kimiko.workers.memory_worker
+import kimiko.workers.fact_worker

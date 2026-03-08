@@ -35,17 +35,18 @@ class ShortTermMemory:
         redis = get_redis()
         key = self._messages_key(session_id)
 
-        msg_data = {
-            "role": message.role.value,
+        raw = {
+            "role": message.role,
             "content": message.content,
-            "timestamp": datetime.utcnow().isoformat(),
+            "images": message.images or [],
+            "timestamp": (message.timestamp or datetime.utcnow()).isoformat(),
         }
 
-        await redis.rpush(key, json.dumps(msg_data))
+        await redis.rpush(key, json.dumps(raw))
         await redis.expire(key, settings.session_ttl_seconds)
 
         ACTIVE_SESSIONS.inc()
-        logger.debug("short_term_message_added", session_id=session_id, role=message.role.value)
+        logger.debug("short_term_message_added", session_id=session_id, role=message.role)
 
     async def get_messages(self, session_id: str) -> list[Message]:
         """Retrieve all messages for a session."""
@@ -62,6 +63,7 @@ class ShortTermMemory:
                 Message(
                     role=Role(data["role"]),
                     content=data["content"],
+                    images=data.get("images"),
                     timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else None,
                 )
             )

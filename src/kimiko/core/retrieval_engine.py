@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.core.ranking import RetrievalRanker
 from kimiko.memory.manager import MemoryManager
+from kimiko.memory.fact_store import FactStore
 from kimiko.models.schemas import RetrievalResult
 
 logger = structlog.get_logger(__name__)
@@ -69,19 +70,28 @@ class RetrievalEngine:
         # 3. Long-term memory from PostgreSQL
         if db and user_id:
             lt_memories = await self.memory.retrieve_memories(
-                db=db, user_id=user_id, limit=10
+                db=db, user_id=user_id, limit=5
             )
             for mem in lt_memories:
                 all_results.append({
                     "text": mem["text"],
-                    "score": mem["importance"],  # Use importance as base score
+                    "score": mem["importance"],
                     "importance": mem["importance"],
                     "source": "long_term",
-                    "metadata": {
-                        "tags": mem.get("tags", []),
-                        "type": mem.get("memory_type", "general"),
-                        "timestamp": 0,  # Would convert created_at to timestamp
-                    },
+                    "metadata": {"type": mem.get("memory_type", "general")},
+                })
+
+            # 3b. Fact Store (Phase 3)
+            fact_store = FactStore(db)
+            user_facts = await fact_store.get_facts(user_id)
+            for f in user_facts:
+                all_results.append({
+                    "text": f"Fact ({f.category}): {f.fact}",
+                    "score": f.importance,
+                    "importance": f.importance,
+                    "confidence": f.confidence_score,
+                    "source": "fact_store",
+                    "metadata": {"category": f.category, "type": "fact"},
                 })
 
         # 4. Rank all results with hybrid scoring
@@ -98,6 +108,7 @@ class RetrievalEngine:
                 text=r["text"],
                 score=r.get("final_score", r.get("score", 0)),
                 importance=r.get("importance", 0.5),
+                confidence=r.get("confidence", 1.0),
                 source=r.get("source", "unknown"),
                 metadata=r.get("metadata", {}),
             )

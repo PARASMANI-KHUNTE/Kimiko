@@ -32,13 +32,19 @@ class MemoryManager:
 
     # ── Session / Short-Term ──
 
-    async def add_message(self, session_id: str, message: Message, request_id: str | None = None) -> None:
+    async def add_message(
+        self, 
+        session_id: str, 
+        message: Message, 
+        request_id: str | None = None,
+        user_id: str | None = None
+    ) -> None:
         """Add a message to the session conversation history."""
         await self.short_term.add_message(session_id, message)
 
         # Check if summarization is needed
         if await self.short_term.needs_summarization(session_id):
-            await self._trigger_summarization(session_id, request_id)
+            await self._trigger_summarization(session_id, request_id, user_id)
 
     async def get_conversation(self, session_id: str) -> list[Message]:
         """Get conversation history for a session."""
@@ -142,15 +148,36 @@ class MemoryManager:
 
     # ── Internal ──
 
-    async def _trigger_summarization(self, session_id: str, request_id: str | None = None) -> None:
-        """Summarize and compress conversation when threshold is exceeded (Background)."""
-        from kimiko.workers import celery_app
-        celery_app.send_task(
-            "kimiko.summarize_conversation",
-            args=[session_id],
-            kwargs={"request_id": request_id},
-        )
-        logger.info("auto_summarization_queued", session_id=session_id, request_id=request_id)
+    async def _trigger_summarization(
+        self,
+        session_id: str,
+        request_id: str | None = None,
+        user_id: str | None = None
+    ) -> None:
+        """Queue summarization and fact extraction as background tasks."""
+        try:
+            from kimiko.workers import celery_app
+
+            # 1. Summarization Task
+            celery_app.send_task(
+                "kimiko.summarize_conversation",
+                args=[session_id],
+                kwargs={"request_id": request_id}
+            )
+            logger.info("auto_summarization_queued", session_id=session_id, request_id=request_id)
+
+            # 2. Fact Extraction Task (Phase 3)
+            if user_id:
+                celery_app.send_task(
+                    "kimiko.extract_user_facts",
+                    args=[user_id, session_id],
+                    kwargs={"request_id": request_id}
+                )
+                logger.info("fact_extraction_queued", user_id=user_id, session_id=session_id)
+
+        except Exception:
+            logger.exception("failed_to_queue_background_tasks", session_id=session_id, request_id=request_id)
+
 
     async def clear_session(self, session_id: str) -> None:
         """Clear all session data."""

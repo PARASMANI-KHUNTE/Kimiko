@@ -56,6 +56,11 @@ dependencies = [
     "duckduckgo-search>=6.0.0",
     "pypdf>=5.0.0",
     "python-multipart>=0.0.9",
+    "faster-whisper>=1.0.0",
+    "piper-tts>=1.2.0",
+    "soundfile>=0.12.1",
+    "uvloop>=0.19.0",
+    "Pillow>=10.0.0",
 ]
 
 [project.optional-dependencies]
