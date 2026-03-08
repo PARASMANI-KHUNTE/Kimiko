@@ -14,7 +14,7 @@ import structlog
 
 from kimiko.plugins.base import PluginBase
 from kimiko.tools.registry import ToolRegistry
-from kimiko.tools.core import BaseTool
+from kimiko.tools.base import BaseTool
 
 logger = structlog.get_logger(__name__)
 

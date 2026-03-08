@@ -19,31 +19,49 @@ INTENT_MODEL_MAP: dict[Intent, str] = {
     Intent.QUESTION: "qwen2.5",
     Intent.GREETING: "qwen2.5",
     Intent.CODE: "codellama",
-    Intent.IMAGE_ANALYSIS: "qwen2.5",  # Vision model in Phase 3
+    Intent.IMAGE_ANALYSIS: "qwen2-vl",
     Intent.DOCUMENT_QUERY: "qwen2.5",
     Intent.AGENT_TASK: "qwen2.5",
     Intent.TOOL_REQUEST: "qwen2.5",
     Intent.SPEECH: "qwen2.5",
 }
 
+# Intents that MUST stay local for privacy (memory, identity, personal data)
+PRIVACY_LOCAL_INTENTS: set[Intent] = {
+    Intent.CHAT,      # Personal conversations
+    Intent.GREETING,  # Identity context
+}
+
+# Token threshold: if estimated tokens exceed this, consider routing to remote
+LOCAL_TOKEN_LIMIT = 6000
+
 
 class ModelRouter:
-    """Routes requests to the best available model based on intent and state."""
+    """Routes requests to the best available model based on intent, privacy, and token budget.
+    
+    Phase 4 Smart Routing:
+    - Privacy-sensitive tasks (personal memory) are always routed locally.
+    - Token-heavy tasks can overflow to a configured remote provider.
+    - Warm models are preferred to avoid cold-start latency.
+    """
 
-    def __init__(self) -> None:
+    def __init__(self, remote_model: str | None = None) -> None:
         self._model_map = INTENT_MODEL_MAP.copy()
+        self._remote_model = remote_model  # e.g., "gpt-4o" or "claude-3.5-sonnet"
 
     async def route(
         self,
         intent: Intent,
         preferred_model: str | None = None,
+        estimated_tokens: int = 0,
     ) -> str:
         """Select the best model for a given intent.
 
         Priority:
         1. User-specified model (if available)
-        2. Intent-mapped model (if available)
-        3. Default fallback model
+        2. Smart routing: token budget + privacy check
+        3. Intent-mapped model (if available)
+        4. Default fallback model
         """
         settings = get_settings()
         llm = get_llm_service()
@@ -59,7 +77,24 @@ class ModelRouter:
                 fallback=settings.default_model,
             )
 
-        # 2. Intent-based routing
+        # 2. Smart Routing (Phase 4)
+        #    If tokens exceed local limits AND the task is not privacy-sensitive,
+        #    route to a remote provider if configured.
+        if (
+            self._remote_model
+            and estimated_tokens > LOCAL_TOKEN_LIMIT
+            and intent not in PRIVACY_LOCAL_INTENTS
+        ):
+            logger.info(
+                "smart_route_remote",
+                model=self._remote_model,
+                reason="token_overflow",
+                estimated_tokens=estimated_tokens,
+                limit=LOCAL_TOKEN_LIMIT,
+            )
+            return self._remote_model
+
+        # 3. Intent-based routing
         intent_model = self._model_map.get(intent, settings.default_model)
 
         # Prefer warm models to avoid loading latency
@@ -71,7 +106,7 @@ class ModelRouter:
             logger.info("model_routed", model=intent_model, reason="intent_cold")
             return intent_model
 
-        # 3. Fallback
+        # 4. Fallback
         logger.warning(
             "model_fallback",
             intended=intent_model,
@@ -93,3 +128,8 @@ class ModelRouter:
         """Dynamically update the intent → model mapping."""
         self._model_map[intent] = model
         logger.info("model_mapping_updated", intent=intent.value, model=model)
+
+    def set_remote_model(self, model: str) -> None:
+        """Configure the remote model for smart overflow routing."""
+        self._remote_model = model
+        logger.info("remote_model_configured", model=model)

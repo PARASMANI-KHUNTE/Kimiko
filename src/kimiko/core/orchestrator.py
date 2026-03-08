@@ -24,6 +24,7 @@ from kimiko.core.streaming import StreamingEngine
 from kimiko.core.token_manager import TokenManager
 from kimiko.memory.document_engine import DocumentEngine
 from kimiko.memory.manager import MemoryManager
+from kimiko.plugins.manager import PluginManager
 from kimiko.services.vision_engine import VisionEngine
 from kimiko.models.schemas import (
     ChatRequest,
@@ -33,6 +34,10 @@ from kimiko.models.schemas import (
     TokenUsage,
 )
 from kimiko.services.llm import LLMServiceError, get_llm_service
+from kimiko.services.model_scheduler import ModelScheduler
+from kimiko.tools.core import CalculatorTool, FileSystemTool
+from kimiko.tools.registry import ToolRegistry
+from kimiko.tools.search import WebSearchTool
 
 logger = structlog.get_logger(__name__)
 
@@ -52,19 +57,19 @@ class RequestOrchestrator:
         # New Phase 2 Engines (Fix #1 review round 3)
         self.document_engine = DocumentEngine(self.memory.semantic)
         
-        from kimiko.tools.registry import ToolRegistry
-        from kimiko.tools.core import CalculatorTool, FileSystemTool
-        from kimiko.tools.search import WebSearchTool
+        self.tool_registry = ToolRegistry()
+        self.tool_registry.register(CalculatorTool())
+        self.tool_registry.register(FileSystemTool(allowed_paths=["./"]))
+        self.tool_registry.register(WebSearchTool())
         
-        registry = ToolRegistry()
-        registry.register(CalculatorTool())
-        registry.register(FileSystemTool(allowed_paths=["./"]))
-        registry.register(WebSearchTool())
+        # Load external plugins dynammically from src/kimiko/plugins/installed/
+        self.plugin_manager = PluginManager(self.tool_registry)
+        loaded_plugins = self.plugin_manager.load_plugins()
+        logger.info("plugins_loaded", count=loaded_plugins)
         
-        self.agent_engine = AgentEngine(registry)
+        self.agent_engine = AgentEngine(self.tool_registry)
         self.vision_engine = VisionEngine()
         
-        from kimiko.services.model_scheduler import ModelScheduler
         self.scheduler = ModelScheduler()
 
     async def process(
