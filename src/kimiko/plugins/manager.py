@@ -54,13 +54,16 @@ class PluginManager:
             sys.path.insert(0, str(self.plugin_dir))
 
         for item in self.plugin_dir.iterdir():
-            if item.is_file() and item.suffix == ".py" and not item.name.startswith("__"):
-                self._load_plugin_file(item)
-                loaded_count += 1
-            elif item.is_dir() and (item / "__init__.py").exists():
-                # Support module-directory plugins
-                self._load_plugin_file(item / "__init__.py", module_name=item.name)
-                loaded_count += 1
+            try:
+                if item.is_file() and item.suffix == ".py" and not item.name.startswith("__"):
+                    self._load_plugin_file(item)
+                    loaded_count += 1
+                elif item.is_dir() and (item / "__init__.py").exists():
+                    # Support module-directory plugins
+                    self._load_plugin_file(item / "__init__.py", module_name=item.name)
+                    loaded_count += 1
+            except Exception as e:
+                logger.error("plugin_scan_failed_entry", path=str(item), error=str(e))
                 
         return len(self.plugins)
 
