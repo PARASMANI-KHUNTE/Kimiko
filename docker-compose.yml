@@ -1,0 +1,149 @@
+# ============================================================
+# Kimiko AI — Docker Compose (Local Development)
+# ============================================================
+# Services: API, Redis, PostgreSQL, Qdrant, Ollama
+# GPU passthrough configured for NVIDIA (Fix #9 review round 2)
+# ============================================================
+
+services:
+  # ── Kimiko API ──
+  kimiko-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kimiko-api
+    ports:
+      - "8000:8000"
+    environment:
+      - KIMIKO_ENV=development
+      - KIMIKO_API_DEBUG=true
+      - KIMIKO_REDIS_URL=redis://redis:6379/0
+      - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
+      - KIMIKO_DATABASE_URL=postgresql+asyncpg://kimiko:kimiko@postgres:5432/kimiko
+      - KIMIKO_QDRANT_URL=http://qdrant:6333
+      - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
+      - KIMIKO_DEFAULT_MODEL=qwen2.5
+      - KIMIKO_EMBEDDING_MODEL=nomic-embed-text
+      - KIMIKO_API_SECRET_KEY=dev-secret-key-change-in-prod
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      ollama:
+        condition: service_started
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    container_name: kimiko-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: kimiko-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kimiko
+      POSTGRES_USER: kimiko
+      POSTGRES_PASSWORD: kimiko
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kimiko -d kimiko"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+  # ── Qdrant ──
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: kimiko-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+  # ── Ollama ──
+  ollama:
+    image: ollama/ollama:latest
+    container_name: kimiko-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # GPU passthrough for NVIDIA (Fix #9 review round 2)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+  # ── Celery Worker ──
+  kimiko-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kimiko-worker
+    command: >
+      python -m celery -A kimiko.workers worker
+      --loglevel=info --concurrency=2
+    environment:
+      - KIMIKO_ENV=development
+      - KIMIKO_REDIS_URL=redis://redis:6379/0
+      - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
+      - KIMIKO_DATABASE_URL=postgresql+asyncpg://kimiko:kimiko@postgres:5432/kimiko
+      - KIMIKO_QDRANT_URL=http://qdrant:6333
+      - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
+      - KIMIKO_EMBEDDING_MODEL=nomic-embed-text
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - kimiko-net
+    restart: unless-stopped
+
+networks:
+  kimiko-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:
+  qdrant-data:
+  ollama-data:
