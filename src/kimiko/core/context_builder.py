@@ -20,11 +20,21 @@ from kimiko.models.schemas import Message, RetrievalResult, Role
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_SYSTEM_PROMPT = """You are Kimiko, an advanced AI assistant created by Paras.
-You are helpful, knowledgeable, and conversational.
-You provide clear, accurate, and thoughtful responses.
-When you don't know something, you say so honestly.
-You can help with coding, analysis, creative tasks, and general questions."""
+DEFAULT_SYSTEM_PROMPT = """You are Kimiko, a grounded AI assistant.
+
+CORE IDENTITY:
+- You were created by Paras, a human developer.
+- IMPORTANT: When the user mentions "Paras", they are referring to your creator. 
+- You do NOT know any companies named "Paras" or subsidiaries of Alibaba Cloud. If your internal knowledge suggests "Paras" is a company, ignore it; for YOU, Paras is a human.
+
+GROUNDING RULES:
+1. STRICT ADHERENCE: Use ONLY [USER FACTS] and [RELEVANT KNOWLEDGE] for personal or factual details.
+2. CITATION MANDATE: Always cite the source of your information (e.g., "[Source: User Facts]" or "[Source: Memory]").
+3. ZERO GUESSING: If a fact is NOT in the provided context, you MUST say: "I do not have enough information in my memory to answer this."
+4. TOOL MANDATE: If the user asks for external information (web, files, news), you MUST suggest or use a tool. Never invent external facts.
+5. NO CORPORATE HALLUCINATION: Paras is your human creator. Do not invent corporate affiliations (e.g., Alibaba) for him.
+
+You provide accurate, evidence-based responses. Stay grounded. Stay honest."""
 
 
 class ContextBuilder:
@@ -43,10 +53,10 @@ class ContextBuilder:
         conversation_summary: str | None = None,
         system_prompt: str | None = None,
         images: list[str] | None = None,
-    ) -> Union[str, dict[str, Any]]:
+    ) -> dict[str, Any]:
         """Build the complete prompt with token budgeting.
         
-        Returns a prompt string OR a dict for multimodal models.
+        Returns a dict with 'system', 'prompt', and optional 'images'.
         """
         # 0. Pre-calculate Retrieval Tokens for Dynamic Budgeting
         retrieval_tokens = 0
@@ -61,11 +71,10 @@ class ContextBuilder:
         )
         system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
-        sections: list[str] = []
-
-        # 1. System prompt (always first)
+        # 1. System prompt (separated)
         sys_text = self.token_manager.truncate_text(system_prompt, budget.get("system", 400))
-        sections.append(sys_text)
+
+        sections: list[str] = []
 
         # 2. Retrieved knowledge / facts / memories
         if retrieval_results:
@@ -103,16 +112,17 @@ class ContextBuilder:
         # 5. User question (always last)
         sections.append(f"User: {user_message}")
 
-        prompt = "\n\n".join(sections)
+        user_prompt = "\n\n".join(sections)
         
-        # If images are present, return a structured prompt for LLMService
+        result = {
+            "system": sys_text,
+            "prompt": user_prompt,
+        }
+        
         if images:
-            return {
-                "prompt": prompt,
-                "images": images
-            }
+            result["images"] = images
 
-        total_tokens = self.token_manager.count_tokens(prompt)
+        total_tokens = self.token_manager.count_tokens(sys_text + user_prompt)
 
         logger.info(
             "context_built",
@@ -122,6 +132,16 @@ class ContextBuilder:
             retrieval_items=len(retrieval_results) if retrieval_results else 0,
             history_messages=len(conversation_history) if conversation_history else 0,
         )
+        
+        if get_settings().debug_prompt:
+            logger.debug(
+                "llm_prompt_debug",
+                system=sys_text,
+                prompt=user_prompt,
+                model=model,
+            )
+
+        return result
         
         # 6. Debug Logging (Fix #2 review round 3)
         if get_settings().debug_prompt:

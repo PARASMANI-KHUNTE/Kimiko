@@ -6,6 +6,7 @@ Redis, PostgreSQL, Qdrant, Ollama, and observability.
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 
 import structlog
@@ -58,12 +59,24 @@ async def lifespan(app: FastAPI):
     init_metrics()
     logger.info("metrics_initialized")
 
+    # 7. GPU Monitor (Phase 5 — background telemetry)
+    from kimiko.observability.gpu_monitor import gpu_monitor_loop
+    gpu_task = asyncio.create_task(gpu_monitor_loop(interval_seconds=5))
+    logger.info("gpu_monitor_started")
+
     logger.info("kimiko_ready", port=settings.api_port)
 
     yield
 
     # ── Shutdown ──
     logger.info("kimiko_shutting_down")
+
+    # Cancel GPU monitor
+    gpu_task.cancel()
+    try:
+        await gpu_task
+    except asyncio.CancelledError:
+        pass
 
     from kimiko.services.llm import close_llm_service
     from kimiko.services.embedding import close_embedding_service

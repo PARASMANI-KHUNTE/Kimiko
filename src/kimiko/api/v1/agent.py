@@ -40,7 +40,7 @@ async def run_agent_task(
         else:
             await orchestrator.scheduler.schedule_chat("qwen2.5")
             
-        answer = await orchestrator.agent_engine.run(
+        answer, trace = await orchestrator.agent_engine.run(
             goal=body.goal,
             images=body.images
             # history=history # TODO: Load history from memory
@@ -50,7 +50,7 @@ async def run_agent_task(
             id=request_id or "unknown",
             goal=body.goal,
             answer=answer,
-            steps=orchestrator.agent_engine.max_steps, # TODO: Track actual steps
+            steps=trace,
             session_id=session_id
         )
     except Exception as e:

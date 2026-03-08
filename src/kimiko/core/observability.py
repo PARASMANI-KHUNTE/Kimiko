@@ -1,7 +1,8 @@
-"""Observability — Prometheus metrics for Kimiko (Fix #7).
+"""Observability — Prometheus metrics for Kimiko.
 
 Exposes counters, histograms, and gauges for request latency,
-LLM generation, memory retrieval, and active sessions.
+LLM generation, memory retrieval, agent reasoning, GPU telemetry,
+and active sessions.
 """
 
 from __future__ import annotations
@@ -59,6 +60,65 @@ VECTOR_SEARCH_DURATION = Histogram(
     buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5],
 )
 
+# ── Agent & Tools (Phase 5) ──
+AGENT_STEPS_TOTAL = Counter(
+    "kimiko_agent_steps_total",
+    "Total agent reasoning steps executed",
+    labelnames=["status"],  # success, failed, timeout
+)
+
+AGENT_FAILURES_TOTAL = Counter(
+    "kimiko_agent_failures_total",
+    "Total agent loop failures",
+    labelnames=["error_type"],
+)
+
+TOOL_EXECUTION_DURATION = Histogram(
+    "kimiko_tool_execution_seconds",
+    "Tool execution latency",
+    labelnames=["tool_name"],
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0],
+)
+
+CONTEXT_TOKENS_TOTAL = Counter(
+    "kimiko_context_tokens_total",
+    "Total context tokens consumed across requests",
+    labelnames=["token_type"],  # system, knowledge, history, image
+)
+
+# ── GPU Telemetry (Phase 5) ──
+GPU_VRAM_USED_BYTES = Gauge(
+    "kimiko_gpu_vram_used_bytes",
+    "Current GPU VRAM usage in bytes",
+)
+
+GPU_VRAM_TOTAL_BYTES = Gauge(
+    "kimiko_gpu_vram_total_bytes",
+    "Total GPU VRAM in bytes",
+)
+
+GPU_UTILIZATION_PERCENT = Gauge(
+    "kimiko_gpu_utilization_percent",
+    "GPU core utilization percentage",
+)
+
+GPU_TEMPERATURE_CELSIUS = Gauge(
+    "kimiko_gpu_temperature_celsius",
+    "GPU temperature in Celsius",
+)
+
+MODEL_LOAD_DURATION = Histogram(
+    "kimiko_model_load_seconds",
+    "Time to load a model into VRAM",
+    labelnames=["model"],
+    buckets=[0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0],
+)
+
+MODEL_SWAP_COUNT = Counter(
+    "kimiko_model_swap_total",
+    "Total number of model swaps (load/unload cycles)",
+)
+
 # ── Sessions ──
 ACTIVE_SESSIONS = Gauge(
     "kimiko_active_sessions",
@@ -77,3 +137,4 @@ def init_metrics() -> None:
     from kimiko import __version__
 
     APP_INFO.info({"version": __version__, "name": "kimiko"})
+

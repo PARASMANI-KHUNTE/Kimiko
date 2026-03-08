@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter
+from fastapi.staticfiles import StaticFiles
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from starlette.responses import Response
+from starlette.responses import FileResponse, Response
 
 from kimiko.api.v1 import agent, audio, chat, documents, memory, models
 from kimiko.models.schemas import HealthResponse
 from kimiko import __version__
+
+# ── Dashboard path ──
+DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "interface" / "dashboard"
 
 # ── v1 Router ──
 v1_router = APIRouter(prefix="/v1")
@@ -21,6 +27,17 @@ v1_router.include_router(audio.router)
 
 # ── Root Router ──
 root_router = APIRouter()
+
+
+@root_router.get("/dashboard", tags=["dashboard"])
+async def dashboard_info():
+    """Information about the Next.js dashboard."""
+    return {
+        "message": "The Kimiko Dashboard is now a Next.js application.",
+        "location": "web/ directory",
+        "dev_url": "http://localhost:3000",
+        "api_url": "http://localhost:8000/v1"
+    }
 
 
 @root_router.get("/health", response_model=HealthResponse, tags=["system"])
@@ -71,3 +88,4 @@ async def metrics() -> Response:
         content=generate_latest(),
         media_type=CONTENT_TYPE_LATEST,
     )
+

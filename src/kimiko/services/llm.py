@@ -45,10 +45,11 @@ class BaseLLMService(ABC):
     async def generate(
         self,
         model: str,
-        prompt: Union[str, dict[str, Any]],
+        prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Generate a complete response."""
@@ -58,10 +59,11 @@ class BaseLLMService(ABC):
     async def stream(
         self,
         model: str,
-        prompt: Union[str, dict[str, Any]],
+        prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens one by one."""
@@ -115,20 +117,14 @@ class OllamaService(BaseLLMService):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Generate a complete (non-streaming) response from Ollama."""
-        # Handle multimodal prompt
-        actual_prompt = prompt
-        images = None
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
-            images = prompt.get("images")
-
         payload: dict[str, Any] = {
             "model": model,
-            "prompt": actual_prompt,
+            "prompt": prompt,
             "stream": False,
             "options": {"temperature": temperature},
         }
@@ -164,20 +160,14 @@ class OllamaService(BaseLLMService):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens from Ollama. Yields individual token strings."""
-        # Handle multimodal prompt
-        actual_prompt = prompt
-        images = None
-        if isinstance(prompt, dict):
-            actual_prompt = prompt.get("prompt", "")
-            images = prompt.get("images")
-
         payload: dict[str, Any] = {
             "model": model,
-            "prompt": actual_prompt,
+            "prompt": prompt,
             "stream": True,
             "options": {"temperature": temperature},
         }

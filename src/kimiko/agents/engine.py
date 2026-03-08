@@ -84,34 +84,30 @@ class AgentEngine:
             content=REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
         )
         
-        # Prepare messages for LLM
-        messages = [system_msg] + state["messages"]
+        # Prepare messages for LLM (User and Assistant turns)
+        messages = state["messages"]
         
-        # Convert to string prompt for current LLC service (Phase 1 simplicity)
+        # Convert to string prompt
         prompt = ""
         for m in messages:
             role = "Assistant" if isinstance(m, AIMessage) else "User"
-            if isinstance(m, SystemMessage): role = "System"
             prompt += f"{role}: {m.content}\n"
         
         prompt += "Assistant: Thought:" 
         
         logger.info("agent_reasoning_start", step=state["step_count"] + 1)
         
+        # Use new structured generate API
         model_name = state.get("model", "qwen2.5")
         if state.get("images"):
-            # Phase 3.5: Multimodal prompt mapping
-            prompt_payload = {
-                "prompt": prompt,
-                "images": state["images"]
-            }
             model_name = "qwen2-vl"
-        else:
-            prompt_payload = prompt
-            
+
         response = await llm.generate(
             model=model_name,
-            prompt=prompt_payload,
+            prompt=prompt,
+            system=REACT_SYSTEM_PROMPT.format(tools_description=tools_description),
+            images=state.get("images"),
+            temperature=0.1, # Agents need even lower temperature for tool reliability
         )
         
         text = response.get("response", "")
@@ -128,7 +124,8 @@ class AgentEngine:
         updates = {
             "thought": thought,
             "messages": [AIMessage(content=full_text)],
-            "step_count": state["step_count"] + 1
+            "step_count": state["step_count"] + 1,
+            "trace": (state.get("trace") or []) + [f"Thought: {thought}"]
         }
         
         if final_answer_match:
@@ -181,10 +178,11 @@ class AgentEngine:
         
         return {
             "observation": observation,
-            "messages": [obs_msg]
+            "messages": [obs_msg],
+            "trace": (state.get("trace") or []) + [f"Observation: {observation}"]
         }
 
-    async def run(self, goal: str, history: List[BaseMessage] | None = None, images: list[str] | None = None) -> str:
+    async def run(self, goal: str, history: List[BaseMessage] | None = None, images: list[str] | None = None) -> tuple[str, list[str]]:
         """Run the agent until it reaches a conclusion or max steps."""
         initial_state: AgentState = {
             "messages": (history or []) + [HumanMessage(content=goal)],
@@ -194,14 +192,17 @@ class AgentEngine:
             "observation": None,
             "step_count": 0,
             "max_steps": self.max_steps,
-            "images": images or []
+            "images": images or [],
+            "trace": []
         }
         
         final_state = await self._graph.ainvoke(initial_state)
+        trace = final_state.get("trace", [])
         
         # Extract final answer from messages
         last_msg = final_state["messages"][-1].content
+        answer = last_msg
         if "Final Answer:" in last_msg:
-            return last_msg.split("Final Answer:")[-1].strip()
+            answer = last_msg.split("Final Answer:")[-1].strip()
             
-        return last_msg
+        return answer, trace

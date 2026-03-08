@@ -59,6 +59,8 @@ class Settings(BaseSettings):
 
     # ── Rate Limiting ──
     rate_limit_rpm: int = 60
+    rate_limit_agent_steps_per_hour: int = 200
+    rate_limit_max_tokens_per_request: int = 16384
 
     # ── Token Budgets ──
     max_context_tokens: int = 8192

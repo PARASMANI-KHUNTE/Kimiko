@@ -48,7 +48,7 @@ class StreamingEngine:
                     event=StreamEventType.TOKEN,
                     data=token,
                 )
-                yield f"data: {event.model_dump_json()}\n\n"
+                yield f"{event.model_dump_json()}\n\n"
                 token_count += 1
                 LLM_TOKENS_GENERATED.labels(model=model).inc()
 
@@ -58,7 +58,7 @@ class StreamingEngine:
                 data="",
                 metadata={"total_tokens": token_count},
             )
-            yield f"data: {done_event.model_dump_json()}\n\n"
+            yield f"{done_event.model_dump_json()}\n\n"
 
         except Exception as e:
             logger.error("stream_error", error=str(e), tokens_sent=token_count)
@@ -66,7 +66,7 @@ class StreamingEngine:
                 event=StreamEventType.ERROR,
                 data=str(e),
             )
-            yield f"data: {error_event.model_dump_json()}\n\n"
+            yield f"{error_event.model_dump_json()}\n\n"
 
         finally:
             STREAM_CONNECTIONS.dec()

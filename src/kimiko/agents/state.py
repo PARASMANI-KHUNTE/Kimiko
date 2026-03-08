@@ -28,3 +28,4 @@ class AgentState(TypedDict):
     step_count: int
     max_steps: int
     images: Optional[List[str]]
+    trace: List[str]

@@ -95,10 +95,16 @@ class RetrievalEngine:
                 })
 
         # 4. Rank all results with hybrid scoring
+        MIN_RETRIEVAL_SCORE = 0.65
         if all_results:
             ranked = self.ranker.rank(all_results)
-            # Take top-k after ranking
-            ranked = ranked[:top_k]
+            # Filter by minimum score threshold to prevent hallucination from weak matches
+            filtered = [r for r in ranked if r.get("final_score", 0) >= MIN_RETRIEVAL_SCORE]
+            
+            if not filtered and ranked:
+                logger.warning("all_results_filtered_below_threshold", top_score=ranked[0].get("final_score"))
+            
+            ranked = filtered[:top_k]
         else:
             ranked = []
 

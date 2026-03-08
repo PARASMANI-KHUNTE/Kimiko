@@ -29,6 +29,7 @@ from kimiko.services.vision_engine import VisionEngine
 from kimiko.models.schemas import (
     ChatRequest,
     ChatResponse,
+    Intent,
     Message,
     Role,
     TokenUsage,
@@ -115,6 +116,9 @@ class RequestOrchestrator:
 
         # 2. Classify intent
         intent_result = self.intent_classifier.classify(user_message)
+        
+        # Force retrieval if it's a factual question
+        force_retrieval = intent_result.intent == Intent.QUESTION
 
         # 3. Route model
         model = await self.model_router.route(
@@ -128,15 +132,15 @@ class RequestOrchestrator:
             session_id=session_id,
             user_id=request.user_id,
             db=db,
-            top_k=10,
+            top_k=5, # Reduced for better focus
         )
 
         # 5. Get conversation history + summary
         conversation_history = await self.memory.get_conversation(session_id)
         conversation_summary = await self.memory.get_conversation_summary(session_id)
 
-        # 6. Build prompt
-        prompt = self.context_builder.build(
+        # 6. Build prompt (returns dict with system and prompt)
+        prompt_data = self.context_builder.build(
             user_message=user_message,
             model=model,
             conversation_history=conversation_history[:-1],  # Exclude current message
@@ -155,11 +159,12 @@ class RequestOrchestrator:
             with LLM_GENERATION_DURATION.labels(model=model).time():
                 llm = get_llm_service()
                 
-                # Handle multimodal prompt dict or string
-                # The LLMService is expected to handle the dict format directly
+                # Use the structured prompt data
                 result = await llm.generate(
                     model=model,
-                    prompt=prompt,
+                    prompt=prompt_data["prompt"],
+                    system=prompt_data["system"],
+                    images=prompt_data.get("images"),
                     temperature=request.temperature,
                     max_tokens=request.max_tokens,
                 )
@@ -224,12 +229,16 @@ class RequestOrchestrator:
 
         # Intent + route
         intent_result = self.intent_classifier.classify(user_message)
+        
+        # Force retrieval if it's a factual question
+        force_retrieval = intent_result.intent == Intent.QUESTION
+        
         model = await self.model_router.route(
             intent=intent_result.intent,
             preferred_model=request.model,
         )
 
-        # Retrieve context
+        # Retrieve context (always called, but now we have higher threshold)
         retrieval_results = await self.retrieval_engine.retrieve(
             query=user_message,
             session_id=session_id,
@@ -241,7 +250,7 @@ class RequestOrchestrator:
         conversation_summary = await self.memory.get_conversation_summary(session_id)
 
         # Build prompt
-        prompt = self.context_builder.build(
+        prompt_data = self.context_builder.build(
             user_message=user_message,
             model=model,
             conversation_history=conversation_history[:-1],
@@ -258,7 +267,9 @@ class RequestOrchestrator:
         llm = get_llm_service()
         token_stream = llm.stream(
             model=model,
-            prompt=prompt,
+            prompt=prompt_data["prompt"],
+            system=prompt_data["system"],
+            images=prompt_data.get("images"),
             temperature=request.temperature,
             max_tokens=request.max_tokens,
         )
