@@ -14,12 +14,16 @@ def embed_and_index(
     user_id: str,
     tags: list[str] | None = None,
     memory_type: str = "general",
+    request_id: str | None = None,
 ) -> dict:
     """Generate embedding and index in Qdrant (runs in background)."""
     try:
         loop = asyncio.new_event_loop()
+        import structlog
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        
         result = loop.run_until_complete(
-            _async_embed_and_index(text, user_id, tags, memory_type)
+            _async_embed_and_index(text, user_id, tags, memory_type, request_id)
         )
         return result
     except Exception as exc:
@@ -27,10 +31,10 @@ def embed_and_index(
 
 
 async def _async_embed_and_index(
-    text: str,
     user_id: str,
     tags: list[str] | None,
     memory_type: str,
+    request_id: str | None = None,
 ) -> dict:
     """Async embedding + indexing logic."""
     from kimiko.services.embedding import EmbeddingService
@@ -49,6 +53,7 @@ async def _async_embed_and_index(
         user_id=user_id,
         tags=tags,
         memory_type=memory_type,
+        request_id=request_id,
     )
 
     await embedding_svc.close()

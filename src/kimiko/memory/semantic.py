@@ -35,7 +35,9 @@ class SemanticMemory:
         user_id: str,
         tags: list[str] | None = None,
         memory_type: str = "general",
+        importance: float = 0.5,
         metadata: dict | None = None,
+        request_id: str | None = None,
     ) -> str:
         """Embed text and store in Qdrant. Returns the point ID."""
         settings = get_settings()
@@ -52,6 +54,7 @@ class SemanticMemory:
             "text": text,
             "tags": tags or [],
             "type": memory_type,
+            "importance": importance,
             "timestamp": int(time.time()),
             **(metadata or {}),
         }
@@ -72,6 +75,7 @@ class SemanticMemory:
             point_id=point_id,
             user_id=user_id,
             memory_type=memory_type,
+            request_id=request_id,
         )
         return point_id
 
@@ -81,6 +85,7 @@ class SemanticMemory:
         user_id: str | None = None,
         top_k: int = 5,
         score_threshold: float = 0.3,
+        request_id: str | None = None,
     ) -> list[dict]:
         """Semantic search — returns ranked results with scores.
 
@@ -126,6 +131,7 @@ class SemanticMemory:
                     "type": hit.payload.get("type", "general"),
                     "timestamp": hit.payload.get("timestamp", 0),
                     "user_id": hit.payload.get("user_id", ""),
+                    "importance": hit.payload.get("importance", 0.5),
                 },
                 "point_id": hit.id,
             })
@@ -135,6 +141,7 @@ class SemanticMemory:
             query_preview=query[:50],
             results_count=len(formatted),
             top_score=formatted[0]["score"] if formatted else 0,
+            request_id=request_id,
         )
 
         return formatted

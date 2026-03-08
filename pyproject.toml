@@ -49,6 +49,13 @@ dependencies = [
 
     # Resilience
     "tenacity>=9.0.0",
+ 
+    # Phase 2: Agents & Tools (Fix #3 review round 3)
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "duckduckgo-search>=6.0.0",
+    "pypdf>=5.0.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

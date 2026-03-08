@@ -135,11 +135,33 @@ class TokenManager:
             return text
         return text[:max_chars] + "..."
 
-    def allocate_budget(self, model: str) -> dict[str, int]:
-        """Get the full budget allocation for a model, ensuring total fits window."""
+    def allocate_budget(
+        self,
+        model: str,
+        knowledge_tokens: int = 0
+    ) -> dict[str, int]:
+        """Get the full budget allocation for a model, ensuring total fits window.
+        
+        Implements Dynamic Budgeting (Fix #4 review round 3):
+        If knowledge_tokens is less than the allocated 'retrieval' budget,
+        the surplus is added to 'history'.
+        """
         budget = self.get_budget(model)
         window = budget.pop("context_window")
-
+ 
+        # Dynamic Scaling: History scales inversely with Knowledge
+        if knowledge_tokens > 0:
+            retrieval_limit = budget.get("retrieval", 1000)
+            surplus = max(0, retrieval_limit - knowledge_tokens)
+            if surplus > 0:
+                budget["history"] += surplus
+                logger.debug(
+                    "dynamic_budget_adjusted",
+                    knowledge_used=knowledge_tokens,
+                    history_expanded=surplus,
+                    new_history_limit=budget["history"]
+                )
+ 
         # Ensure allocations don't exceed window
         total_allocated = sum(budget.values())
         if total_allocated > window:

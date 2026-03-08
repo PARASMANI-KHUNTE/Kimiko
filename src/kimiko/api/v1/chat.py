@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import structlog
 from kimiko.api.deps import get_db_session, get_orchestrator
 from kimiko.api.middleware.auth import verify_api_key
 from kimiko.api.middleware.rate_limit import rate_limit_middleware
@@ -31,7 +32,8 @@ async def chat(
         # Return a hint to use the stream endpoint
         request.stream = False
 
-    return await orchestrator.process(request, db=db)
+    request_id = structlog.contextvars.get_contextvars().get("request_id")
+    return await orchestrator.process(request, db=db, request_id=request_id)
 
 
 @router.post("/stream")
@@ -61,8 +63,9 @@ async def chat_stream(
     asyncio.create_task(check_disconnect())
 
     async def event_generator():
+        request_id = structlog.contextvars.get_contextvars().get("request_id")
         async for sse_event in orchestrator.process_stream(
-            request, db=db, disconnect_event=disconnect_event
+            request, db=db, request_id=request_id, disconnect_event=disconnect_event
         ):
             if disconnect_event.is_set():
                 break

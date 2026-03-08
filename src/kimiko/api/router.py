@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
 
-from kimiko.api.v1 import chat, memory, models
+from kimiko.api.v1 import agent, chat, documents, memory, models
 from kimiko.models.schemas import HealthResponse
 from kimiko import __version__
 
@@ -15,6 +15,8 @@ v1_router = APIRouter(prefix="/v1")
 v1_router.include_router(chat.router)
 v1_router.include_router(memory.router)
 v1_router.include_router(models.router)
+v1_router.include_router(agent.router)
+v1_router.include_router(documents.router)
 
 # ── Root Router ──
 root_router = APIRouter()

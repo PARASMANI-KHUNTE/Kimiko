@@ -47,6 +47,7 @@ class RetrievalEngine:
                 all_results.append({
                     "text": summary,
                     "score": 0.8,  # High base score for conversation context
+                    "importance": 1.0,
                     "source": "short_term",
                     "metadata": {"type": "conversation_summary", "tags": []},
                 })
@@ -60,6 +61,7 @@ class RetrievalEngine:
                 all_results.append({
                     "text": sr["text"],
                     "score": sr["score"],
+                    "importance": sr.get("metadata", {}).get("importance", 0.5),
                     "source": "semantic",
                     "metadata": sr.get("metadata", {}),
                 })
@@ -73,6 +75,7 @@ class RetrievalEngine:
                 all_results.append({
                     "text": mem["text"],
                     "score": mem["importance"],  # Use importance as base score
+                    "importance": mem["importance"],
                     "source": "long_term",
                     "metadata": {
                         "tags": mem.get("tags", []),
@@ -94,6 +97,7 @@ class RetrievalEngine:
             RetrievalResult(
                 text=r["text"],
                 score=r.get("final_score", r.get("score", 0)),
+                importance=r.get("importance", 0.5),
                 source=r.get("source", "unknown"),
                 metadata=r.get("metadata", {}),
             )

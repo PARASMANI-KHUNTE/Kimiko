@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import structlog
 
+from kimiko.config import get_settings
 from kimiko.core.token_manager import TokenManager
 from kimiko.models.schemas import Message, RetrievalResult, Role
 
@@ -46,7 +47,13 @@ class ContextBuilder:
 
         Returns a single formatted prompt string ready for LLM consumption.
         """
-        budget = self.token_manager.allocate_budget(model)
+        # 0. Pre-calculate Retrieval Tokens for Dynamic Budgeting
+        retrieval_tokens = 0
+        if retrieval_results:
+            for r in retrieval_results:
+                retrieval_tokens += self.token_manager.count_tokens(r.text)
+ 
+        budget = self.token_manager.allocate_budget(model, knowledge_tokens=retrieval_tokens)
         system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 
         sections: list[str] = []
@@ -85,8 +92,8 @@ class ContextBuilder:
         sections.append(f"User: {user_message}")
 
         prompt = "\n\n".join(sections)
-
         total_tokens = self.token_manager.count_tokens(prompt)
+
         logger.info(
             "context_built",
             model=model,
@@ -95,6 +102,14 @@ class ContextBuilder:
             retrieval_items=len(retrieval_results) if retrieval_results else 0,
             history_messages=len(conversation_history) if conversation_history else 0,
         )
+        
+        # 6. Debug Logging (Fix #2 review round 3)
+        if get_settings().debug_prompt:
+            logger.debug(
+                "llm_prompt_debug",
+                prompt=prompt,
+                model=model,
+            )
 
         return prompt
 

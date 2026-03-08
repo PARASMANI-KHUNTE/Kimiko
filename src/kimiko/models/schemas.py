@@ -134,8 +134,36 @@ class IntentResult(BaseModel):
 class RetrievalResult(BaseModel):
     text: str
     score: float
+    importance: float = 0.5
     source: str  # "semantic", "long_term", "short_term"
     metadata: dict = Field(default_factory=dict)
+
+
+# ── Agent Task ──
+
+
+class AgentTaskRequest(BaseModel):
+    goal: str = Field(..., min_length=5)
+    session_id: str | None = None
+    user_id: str | None = None
+    max_steps: int = Field(default=5, ge=1, le=10)
+
+
+class AgentTaskResponse(BaseModel):
+    id: str
+    goal: str
+    answer: str
+    steps: int
+    session_id: str
+
+
+# ── Documents ──
+
+
+class DocumentIngestResponse(BaseModel):
+    status: str
+    document_name: str
+    chunks_indexed: int
 
 
 # ── Health ──

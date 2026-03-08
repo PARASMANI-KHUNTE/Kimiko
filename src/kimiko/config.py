@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     api_port: int = 8000
     api_secret_key: str = "change-me-in-production"
     api_debug: bool = False
+    debug_prompt: bool = False
 
     # ── Ollama ──
     ollama_base_url: str = "http://localhost:11434"

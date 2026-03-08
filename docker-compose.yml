@@ -19,12 +19,12 @@ services:
       - KIMIKO_API_DEBUG=true
       - KIMIKO_REDIS_URL=redis://redis:6379/0
       - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
-      - KIMIKO_DATABASE_URL=postgresql+asyncpg://kimiko:kimiko@postgres:5432/kimiko
+      - KIMIKO_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kimiko
       - KIMIKO_QDRANT_URL=http://qdrant:6333
       - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
       - KIMIKO_DEFAULT_MODEL=qwen2.5
       - KIMIKO_EMBEDDING_MODEL=nomic-embed-text
-      - KIMIKO_API_SECRET_KEY=dev-secret-key-change-in-prod
+      - KIMIKO_API_SECRET_KEY=${KIMIKO_API_SECRET_KEY}
     depends_on:
       redis:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -64,12 +64,12 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_DB: kimiko
-      POSTGRES_USER: kimiko
-      POSTGRES_PASSWORD: kimiko
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kimiko -d kimiko"]
+      test: [ "CMD-SHELL", "pg_isready -U kimiko -d kimiko" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -107,7 +107,7 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     networks:
       - kimiko-net
     restart: unless-stopped
@@ -119,13 +119,12 @@ services:
       dockerfile: Dockerfile
     container_name: kimiko-worker
     command: >
-      python -m celery -A kimiko.workers worker
-      --loglevel=info --concurrency=2
+      python -m celery -A kimiko.workers worker --loglevel=info --concurrency=2
     environment:
       - KIMIKO_ENV=development
       - KIMIKO_REDIS_URL=redis://redis:6379/0
       - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
-      - KIMIKO_DATABASE_URL=postgresql+asyncpg://kimiko:kimiko@postgres:5432/kimiko
+      - KIMIKO_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kimiko
       - KIMIKO_QDRANT_URL=http://qdrant:6333
       - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
       - KIMIKO_EMBEDDING_MODEL=nomic-embed-text

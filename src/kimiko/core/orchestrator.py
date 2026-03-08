@@ -14,6 +14,7 @@ from collections.abc import AsyncIterator
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from kimiko.agents.engine import AgentEngine
 from kimiko.core.context_builder import ContextBuilder
 from kimiko.core.intent import IntentClassifier
 from kimiko.core.model_router import ModelRouter
@@ -21,6 +22,7 @@ from kimiko.core.observability import LLM_ERRORS, LLM_GENERATION_DURATION
 from kimiko.core.retrieval_engine import RetrievalEngine
 from kimiko.core.streaming import StreamingEngine
 from kimiko.core.token_manager import TokenManager
+from kimiko.memory.document_engine import DocumentEngine
 from kimiko.memory.manager import MemoryManager
 from kimiko.models.schemas import (
     ChatRequest,
@@ -45,11 +47,26 @@ class RequestOrchestrator:
         self.retrieval_engine = RetrievalEngine(self.memory)
         self.model_router = ModelRouter()
         self.streaming_engine = StreamingEngine()
+        
+        # New Phase 2 Engines (Fix #1 review round 3)
+        self.document_engine = DocumentEngine(self.memory.semantic)
+        
+        from kimiko.tools.registry import ToolRegistry
+        from kimiko.tools.core import CalculatorTool, FileSystemTool
+        from kimiko.tools.search import WebSearchTool
+        
+        registry = ToolRegistry()
+        registry.register(CalculatorTool())
+        registry.register(FileSystemTool(allowed_paths=["./"]))
+        registry.register(WebSearchTool())
+        
+        self.agent_engine = AgentEngine(registry)
 
     async def process(
         self,
         request: ChatRequest,
         db: AsyncSession | None = None,
+        request_id: str | None = None,
     ) -> ChatResponse:
         """Process a non-streaming chat request through the full pipeline.
 
@@ -64,7 +81,7 @@ class RequestOrchestrator:
         8. Store assistant response
         9. Return response
         """
-        request_id = str(uuid.uuid4())
+        request_id = request_id or str(uuid.uuid4())[:8]
         start_time = time.time()
 
         # Extract user message (last message in the list)
@@ -82,6 +99,7 @@ class RequestOrchestrator:
         await self.memory.add_message(
             session_id,
             Message(role=Role.USER, content=user_message),
+            request_id=request_id,
         )
 
         # 2. Classify intent
@@ -135,6 +153,7 @@ class RequestOrchestrator:
         await self.memory.add_message(
             session_id,
             Message(role=Role.ASSISTANT, content=response_text),
+            request_id=request_id,
         )
 
         # 9. Build response
@@ -163,13 +182,14 @@ class RequestOrchestrator:
         self,
         request: ChatRequest,
         db: AsyncSession | None = None,
+        request_id: str | None = None,
         disconnect_event: asyncio.Event | None = None,
     ) -> AsyncIterator[str]:
         """Process a streaming chat request.
 
         Same pipeline as process(), but streams LLM tokens via SSE.
         """
-        request_id = str(uuid.uuid4())
+        request_id = request_id or str(uuid.uuid4())[:8]
         user_message = request.messages[-1].content
         session_id = request.session_id or request_id
 
@@ -177,6 +197,7 @@ class RequestOrchestrator:
         await self.memory.add_message(
             session_id,
             Message(role=Role.USER, content=user_message),
+            request_id=request_id,
         )
 
         # Intent + route
@@ -238,6 +259,7 @@ class RequestOrchestrator:
             await self.memory.add_message(
                 session_id,
                 Message(role=Role.ASSISTANT, content=full_response),
+                request_id=request_id,
             )
 
         logger.info(

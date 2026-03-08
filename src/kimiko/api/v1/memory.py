@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import structlog
 from kimiko.api.deps import get_db_session, get_orchestrator
 from kimiko.api.middleware.auth import verify_api_key
 from kimiko.core.orchestrator import RequestOrchestrator
@@ -21,6 +22,7 @@ async def create_memory(
     _auth: dict = Depends(verify_api_key),
 ) -> dict:
     """Store a new persistent memory."""
+    request_id = structlog.contextvars.get_contextvars().get("request_id")
     memory_id = await orchestrator.memory.store_memory(
         db=db,
         user_id=body.user_id,
@@ -28,6 +30,7 @@ async def create_memory(
         tags=body.tags,
         memory_type=body.memory_type,
         importance=body.importance,
+        request_id=request_id,
     )
     return {"id": memory_id, "status": "created"}
 
@@ -54,8 +57,9 @@ async def search_memories(
     _auth: dict = Depends(verify_api_key),
 ) -> list[dict]:
     """Semantic search across memories."""
+    request_id = structlog.contextvars.get_contextvars().get("request_id")
     return await orchestrator.memory.search(
-        query=body.query, user_id=body.user_id, top_k=body.top_k
+        query=body.query, user_id=body.user_id, top_k=body.top_k, request_id=request_id
     )
 
 

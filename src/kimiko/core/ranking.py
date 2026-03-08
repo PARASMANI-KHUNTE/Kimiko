@@ -11,10 +11,11 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-# ── Weights ──
-SEMANTIC_WEIGHT = 0.7
+# ── Weights (Fix #3 review round 3) ──
+SEMANTIC_WEIGHT = 0.6
 RECENCY_WEIGHT = 0.2
 TAG_MATCH_WEIGHT = 0.1
+IMPORTANCE_WEIGHT = 0.1
 
 # How quickly recency decays (seconds). Memories older than this get score ~0.
 RECENCY_DECAY_SECONDS = 7 * 24 * 3600  # 7 days
@@ -28,11 +29,13 @@ class RetrievalRanker:
         semantic_weight: float = SEMANTIC_WEIGHT,
         recency_weight: float = RECENCY_WEIGHT,
         tag_weight: float = TAG_MATCH_WEIGHT,
+        importance_weight: float = IMPORTANCE_WEIGHT,
         recency_decay: float = RECENCY_DECAY_SECONDS,
     ) -> None:
         self.semantic_weight = semantic_weight
         self.recency_weight = recency_weight
         self.tag_weight = tag_weight
+        self.importance_weight = importance_weight
         self.recency_decay = recency_decay
 
     def compute_recency_score(self, timestamp: float) -> float:
@@ -81,13 +84,15 @@ class RetrievalRanker:
             timestamp = metadata.get("timestamp", time.time())
             item_tags = metadata.get("tags", [])
 
+            importance_score = item.get("importance", 0.5)
             recency_score = self.compute_recency_score(timestamp)
             tag_score = self.compute_tag_match_score(item_tags, query_tags)
-
+ 
             final_score = (
                 self.semantic_weight * semantic_score
                 + self.recency_weight * recency_score
                 + self.tag_weight * tag_score
+                + self.importance_weight * importance_score
             )
 
             scored_item = {**item, "final_score": final_score}

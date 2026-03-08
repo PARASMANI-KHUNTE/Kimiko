@@ -32,13 +32,13 @@ class MemoryManager:
 
     # ── Session / Short-Term ──
 
-    async def add_message(self, session_id: str, message: Message) -> None:
+    async def add_message(self, session_id: str, message: Message, request_id: str | None = None) -> None:
         """Add a message to the session conversation history."""
         await self.short_term.add_message(session_id, message)
 
         # Check if summarization is needed
         if await self.short_term.needs_summarization(session_id):
-            await self._trigger_summarization(session_id)
+            await self._trigger_summarization(session_id, request_id)
 
     async def get_conversation(self, session_id: str) -> list[Message]:
         """Get conversation history for a session."""
@@ -58,6 +58,7 @@ class MemoryManager:
         tags: list[str] | None = None,
         memory_type: str = "general",
         importance: float = 0.5,
+        request_id: str | None = None,
     ) -> str:
         """Store a persistent memory, optionally promoting to semantic index.
 
@@ -81,6 +82,7 @@ class MemoryManager:
                 user_id=user_id,
                 tags=tags,
                 memory_type=memory_type,
+                request_id=request_id,
             )
             memory.vector_id = vector_id
             await db.flush()
@@ -89,6 +91,7 @@ class MemoryManager:
                 "memory_promoted_to_semantic",
                 memory_id=str(memory.id),
                 importance=importance,
+                request_id=request_id,
             )
 
         return str(memory.id)
@@ -126,21 +129,28 @@ class MemoryManager:
     # ── Semantic Search ──
 
     async def search(
-        self, query: str, user_id: str | None = None, top_k: int = 5
+        self,
+        query: str,
+        user_id: str | None = None,
+        top_k: int = 5,
+        request_id: str | None = None,
     ) -> list[dict]:
         """Perform semantic search across memories."""
         return await self.semantic.search(
-            query=query, user_id=user_id, top_k=top_k
+            query=query, user_id=user_id, top_k=top_k, request_id=request_id
         )
 
     # ── Internal ──
 
-    async def _trigger_summarization(self, session_id: str) -> None:
-        """Summarize and compress conversation when threshold is exceeded."""
-        messages = await self.short_term.get_messages(session_id)
-        summary = await self.summarizer.summarize(messages)
-        await self.short_term.store_summary(session_id, summary)
-        logger.info("auto_summarization_triggered", session_id=session_id)
+    async def _trigger_summarization(self, session_id: str, request_id: str | None = None) -> None:
+        """Summarize and compress conversation when threshold is exceeded (Background)."""
+        from kimiko.workers import celery_app
+        celery_app.send_task(
+            "kimiko.summarize_conversation",
+            args=[session_id],
+            kwargs={"request_id": request_id},
+        )
+        logger.info("auto_summarization_queued", session_id=session_id, request_id=request_id)
 
     async def clear_session(self, session_id: str) -> None:
         """Clear all session data."""

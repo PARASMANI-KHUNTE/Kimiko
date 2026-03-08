@@ -8,17 +8,20 @@ from kimiko.workers import celery_app
 
 
 @celery_app.task(name="kimiko.summarize_conversation", bind=True, max_retries=2)
-def summarize_conversation(self, session_id: str) -> dict:
+def summarize_conversation(self, session_id: str, request_id: str | None = None) -> dict:
     """Summarize a conversation in the background."""
     try:
+        import structlog
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        
         loop = asyncio.new_event_loop()
-        result = loop.run_until_complete(_async_summarize(session_id))
+        result = loop.run_until_complete(_async_summarize(session_id, request_id))
         return result
     except Exception as exc:
         self.retry(exc=exc, countdown=5)
 
 
-async def _async_summarize(session_id: str) -> dict:
+async def _async_summarize(session_id: str, request_id: str | None = None) -> dict:
     """Async summarization logic."""
     from kimiko.db.redis import init_redis
     from kimiko.services.llm import init_llm_service
