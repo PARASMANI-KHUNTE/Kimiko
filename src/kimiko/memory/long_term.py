@@ -9,7 +9,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.core.observability import MEMORY_RETRIEVAL_DURATION
-from kimiko.models.database import Memory
+from kimiko.models.database import Memory, UserActivity
 
 logger = structlog.get_logger(__name__)
 
@@ -97,3 +97,43 @@ class LongTermMemory:
             await db.flush()
             return True
         return False
+
+    # ── User Activity ──
+
+    async def record_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        action: str,
+        app_name: str | None = None,
+        file_path: str | None = None,
+        metadata: dict | None = None,
+    ) -> UserActivity:
+        """Record a new user activity (telemetry)."""
+        import json
+        activity = UserActivity(
+            user_id=uuid.UUID(user_id),
+            action=action,
+            app_name=app_name,
+            file_path=file_path,
+            metadata_json=json.dumps(metadata) if metadata else None,
+        )
+        db.add(activity)
+        await db.flush()
+        return activity
+
+    async def get_recent_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        limit: int = 50,
+    ) -> list[UserActivity]:
+        """Get recent activities for context."""
+        stmt = (
+            select(UserActivity)
+            .where(UserActivity.user_id == uuid.UUID(user_id))
+            .order_by(UserActivity.timestamp.desc())
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        return list(result.scalars().all())

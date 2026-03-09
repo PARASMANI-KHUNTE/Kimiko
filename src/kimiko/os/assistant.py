@@ -16,6 +16,7 @@ import re
 import subprocess
 import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -30,6 +31,7 @@ from PIL import Image
 from kimiko.config import get_settings
 from kimiko.os.screen_context import ScreenContextEngine
 from kimiko.os.command_executor import CommandExecutor
+from kimiko.os.automation_executor import AutomationExecutor
 from kimiko.tools.os_filesystem import OSFileSystem
 
 settings = get_settings()
@@ -52,12 +54,127 @@ STATE = {
     "resources": {},           # {cpu, ram, disk}
     "screen_details": {},      # {visible_text, ui_elements, active_app}
     "pending_action": None,    # {id, type, command, content, status}
+    "action_results": {},      # {action_id: {stdout, stderr, success, exit_code}}
+    "terminal_history": [],    # List of {command, timestamp, status, result_preview}
+    "suggestions": [],         # Proactive suggestions queue
     "last_response": "",
     "query": None,
     "session_id": "os-assistant",
 }
 
 OS_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
+def _get_pending_suggestion():
+    for suggestion in reversed(STATE["suggestions"]):
+        if suggestion.get("status") == "pending":
+            return suggestion
+    return None
+
+
+def _dismiss_suggestion(suggestion_id=None):
+    if suggestion_id:
+        for suggestion in STATE["suggestions"]:
+            if suggestion.get("id") == suggestion_id and suggestion.get("status") == "pending":
+                suggestion["status"] = "dismissed"
+                suggestion["dismissed_at"] = int(time.time())
+                return suggestion_id
+        return None
+
+    pending = _get_pending_suggestion()
+    if not pending:
+        return None
+    pending["status"] = "dismissed"
+    pending["dismissed_at"] = int(time.time())
+    return pending.get("id")
+
+
+class InsightEngine:
+    """Background detector that proposes proactive suggestions from live screen text."""
+
+    def __init__(self, poll_interval=4, cooldown_seconds=45, max_suggestions=20):
+        self.poll_interval = poll_interval
+        self.cooldown_seconds = cooldown_seconds
+        self.max_suggestions = max_suggestions
+        self._last_seen = {}
+        self._patterns = [
+            {
+                "kind": "python_traceback",
+                "title": "Python Traceback Detected",
+                "regex": re.compile(r"Traceback \(most recent call last\):", re.IGNORECASE),
+                "message": "I noticed a Python traceback on screen and can help identify the root cause.",
+                "suggested_query": "Analyze the traceback on my screen and suggest a fix.",
+            },
+            {
+                "kind": "module_not_found",
+                "title": "Missing Python Module",
+                "regex": re.compile(r"ModuleNotFoundError:\s*No module named ['\"][^'\"]+['\"]", re.IGNORECASE),
+                "message": "A dependency appears to be missing. I can suggest the correct install command.",
+                "suggested_query": "Fix the ModuleNotFoundError currently shown on screen.",
+            },
+            {
+                "kind": "assertion_error",
+                "title": "Assertion Failure Detected",
+                "regex": re.compile(r"AssertionError\b", re.IGNORECASE),
+                "message": "A test assertion failed. I can help isolate likely causes and propose a patch.",
+                "suggested_query": "Explain the current AssertionError and propose a code fix.",
+            },
+            {
+                "kind": "npm_error",
+                "title": "Node Build Error Detected",
+                "regex": re.compile(r"\bnpm ERR!\b|\bTypeError:\b|\bReferenceError:\b", re.IGNORECASE),
+                "message": "A JavaScript or npm error is visible. I can suggest the next debugging step.",
+                "suggested_query": "Analyze the JavaScript/npm error on screen and suggest a fix.",
+            },
+        ]
+
+    def _enqueue_suggestion(self, pattern, matched_text):
+        signature = f"{pattern['kind']}::{matched_text.strip().lower()[:180]}"
+        now = time.time()
+        last_ts = self._last_seen.get(signature, 0.0)
+        if now - last_ts < self.cooldown_seconds:
+            return
+        self._last_seen[signature] = now
+
+        pending_same_kind = [
+            s for s in STATE["suggestions"]
+            if s.get("status") == "pending" and s.get("kind") == pattern["kind"]
+        ]
+        if pending_same_kind:
+            return
+
+        suggestion = {
+            "id": str(uuid.uuid4())[:8],
+            "kind": pattern["kind"],
+            "title": pattern["title"],
+            "message": pattern["message"],
+            "matched_text": matched_text[:240],
+            "suggested_query": pattern["suggested_query"],
+            "created_at": int(now),
+            "status": "pending",
+        }
+        STATE["suggestions"].append(suggestion)
+        STATE["suggestions"] = STATE["suggestions"][-self.max_suggestions:]
+
+    def scan_once(self):
+        visible_text = (STATE.get("screen_details", {}) or {}).get("visible_text", "") or ""
+        clipboard = STATE.get("clipboard", "") or ""
+        candidate = f"{visible_text}\n{clipboard}"
+        if not candidate.strip():
+            return
+
+        for pattern in self._patterns:
+            match = pattern["regex"].search(candidate)
+            if match:
+                self._enqueue_suggestion(pattern, match.group(0))
+
+    def run_forever(self):
+        while True:
+            try:
+                self.scan_once()
+            except Exception as e:
+                print(f"Insight loop error: {e}")
+            time.sleep(self.poll_interval)
 
 
 # ═══════════════════════════════════════════════════
@@ -189,6 +306,47 @@ class ContextServer(BaseHTTPRequestHandler):
                 "screen": STATE["screen_details"],
             })
 
+        elif path.startswith("/approval/result/"):
+            action_id = path.split("/")[-1]
+            result = STATE["action_results"].get(action_id)
+            if result:
+                self._json_response(result)
+            else:
+                self._json_response({"error": "Action result not found"}, 404)
+
+        elif path == "/terminal/history":
+            self._json_response({"history": STATE["terminal_history"]})
+
+        elif path == "/files/list":
+            # Simple list for the UI
+            query = parse_qs(parsed.query)
+            root = query.get("path", [os.path.expanduser("~")])[0]
+            try:
+                items = []
+                for entry in os.scandir(root):
+                    items.append({
+                        "name": entry.name,
+                        "is_dir": entry.is_dir(),
+                        "size": entry.stat().st_size if entry.is_file() else 0,
+                        "path": entry.path
+                    })
+                items.sort(key=lambda x: (not x["is_dir"], x["name"].lower()))
+                self._json_response({"items": items[:200], "path": root})
+            except Exception as e:
+                self._json_response({"error": str(e)}, 500)
+
+        elif path == "/files/read":
+            query = parse_qs(parsed.query)
+            f_path = query.get("path", [""])[0]
+            try:
+                if not os.path.exists(f_path):
+                    return self._json_response({"error": "File not found"}, 404)
+                with open(f_path, 'r', encoding='utf-8', errors='replace') as f:
+                    content = f.read(10000) # Limit to 10kb
+                self._json_response({"content": content, "path": f_path})
+            except Exception as e:
+                self._json_response({"error": str(e)}, 500)
+
         elif path == "/system":
             self._json_response({
                 "monitors": [{k: v for k, v in m.items() if k != "thumbnail"} for m in STATE["monitors"]],
@@ -222,6 +380,9 @@ class ContextServer(BaseHTTPRequestHandler):
 
         elif path == "/approval/pending":
             self._json_response({"pending": STATE["pending_action"]})
+
+        elif path == "/suggestions/pending":
+            self._json_response({"pending": _get_pending_suggestion()})
 
         else:
             self._json_response({"error": "not found"}, 404)
@@ -270,6 +431,19 @@ class ContextServer(BaseHTTPRequestHandler):
             }
             self._json_response({"action_id": action_id, "status": "pending"})
 
+        elif self.path == "/automation/run":
+            action = payload.get("action")
+            params = payload.get("params", {})
+            action_id = str(uuid.uuid4())[:8]
+            STATE["pending_action"] = {
+                "id": action_id,
+                "type": "automation",
+                "action": action,
+                "params": params,
+                "status": "pending"
+            }
+            self._json_response({"action_id": action_id, "status": "pending"})
+
         elif self.path == "/approval/confirm":
             action_id = payload.get("action_id")
             if not STATE["pending_action"] or STATE["pending_action"]["id"] != action_id:
@@ -277,18 +451,50 @@ class ContextServer(BaseHTTPRequestHandler):
             
             # Switch case for confirmation
             action = STATE["pending_action"]
+            result_data = None
+            
             if action["type"] == "terminal":
                 result = CommandExecutor.execute(action["command"])
+                result_data = {
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", ""),
+                    "success": result.get("success", False),
+                    "exit_code": result.get("exit_code", 0)
+                }
+                STATE["action_results"][action_id] = result_data
+                STATE["terminal_history"].append({
+                    "command": action["command"],
+                    "timestamp": int(time.time()),
+                    "status": "success" if result_data["success"] else "error",
+                    "result_preview": (result_data["stdout"] or result_data["stderr"])[:100]
+                })
                 STATE["pending_action"] = None
                 self._json_response({"success": True, "result": result})
+                
             elif action["type"] == "file_write":
                 success = OSFileSystem.write_file(action["path"], action["content"])
+                result_data = {"success": success}
+                STATE["action_results"][action_id] = result_data
                 STATE["pending_action"] = None
                 self._json_response({"success": success})
+                
+            elif action["type"] == "automation":
+                executor = AutomationExecutor()
+                result = executor.execute(action["action"], action["params"])
+                result_data = {"result": result, "success": "Error" not in result}
+                STATE["action_results"][action_id] = result_data
+                STATE["pending_action"] = None
+                self._json_response({"success": True, "result": result})
 
         elif self.path == "/approval/deny":
             STATE["pending_action"] = None
             self._json_response({"success": True})
+
+        elif self.path == "/suggestions/dismiss":
+            dismissed_id = _dismiss_suggestion(payload.get("suggestion_id"))
+            if not dismissed_id:
+                return self._json_response({"success": False, "error": "No pending suggestion found."}, 404)
+            self._json_response({"success": True, "dismissed_id": dismissed_id})
 
     def log_message(self, format, *args):
         return
@@ -304,6 +510,7 @@ class HotkeyManager:
         self.api_url = f"http://{host}:{settings.api_port}/v1/chat"
         self.api_key = settings.api_secret_key
         self.ui_process = None
+        self.insight_engine = InsightEngine()
 
     def _get_electron_path(self):
         base = os.path.dirname(__file__)
@@ -360,16 +567,39 @@ class HotkeyManager:
             print(f"Capture Error: {e}")
             STATE["screenshot"] = None
 
+    def _refresh_live_screen_details(self):
+        """Lightweight refresh for proactive insight scanning."""
+        try:
+            win = gw.getActiveWindow()
+            STATE["active_window"] = win.title if win else STATE["active_window"]
+        except Exception:
+            pass
+
+        try:
+            with mss.mss() as sct:
+                if len(sct.monitors) < 2:
+                    return
+                primary_img = sct.grab(sct.monitors[1])
+                pil_img = Image.frombytes("RGB", primary_img.size, primary_img.bgra, "raw", "BGRX")
+                STATE["screen_details"]["visible_text"] = ScreenContextEngine.extract_text_pil(pil_img)
+                STATE["screen_details"]["active_app"] = STATE["active_window"]
+        except Exception:
+            pass
+
     # ── System Context Loop ──
     def _system_context_loop(self):
         """Background thread: polls system state every 3 seconds."""
         # Initial CPU measurement (first call always returns 0)
         psutil.cpu_percent(interval=0)
+        tick = 0
         while True:
             try:
                 STATE["processes"] = SystemContext.get_processes(max_count=10)
                 STATE["resources"] = SystemContext.get_resources()
                 STATE["monitors"] = SystemContext.get_monitors()
+                tick += 1
+                if tick % 2 == 0:
+                    self._refresh_live_screen_details()
             except Exception as e:
                 print(f"Context loop error: {e}")
             time.sleep(3)
@@ -460,6 +690,10 @@ class HotkeyManager:
 
         # 3. Start query watcher
         threading.Thread(target=self.watch_queries, daemon=True).start()
+
+        # 4. Start proactive insight engine
+        threading.Thread(target=self.insight_engine.run_forever, daemon=True).start()
+        print("Proactive insight engine active")
 
         print(f"\n╔══════════════════════════════════════════════════╗")
         print(f"║ 🚀 Kimiko OS Assistant (Phase 8) Active          ║")

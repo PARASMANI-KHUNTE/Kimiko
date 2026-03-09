@@ -42,6 +42,8 @@ from kimiko.tools.search import WebSearchTool
 from kimiko.tools.datetime_tool import DateTimeTool
 from kimiko.tools.terminal import TerminalTool
 from kimiko.tools.os_filesystem import OSFileSystemTool
+from kimiko.tools.system_context import SystemContextTool
+from kimiko.tools.automation import AppAutomationTool
 
 # OS Agent Identity
 OS_USER_ID = "00000000-0000-0000-0000-000000000001"
@@ -71,6 +73,8 @@ class RequestOrchestrator:
         self.tool_registry.register(DateTimeTool())
         self.tool_registry.register(TerminalTool())
         self.tool_registry.register(OSFileSystemTool())
+        self.tool_registry.register(SystemContextTool())
+        self.tool_registry.register(AppAutomationTool())
         
         # Load external plugins dynammically from src/kimiko/plugins/installed/
         self.plugin_manager = PluginManager(self.tool_registry)
@@ -292,13 +296,38 @@ class RequestOrchestrator:
         user_message = request.message
         session_id = request.session_id or request_id
 
-        # ── OS AGENT PATH (No streaming for now) ──
+        # ── OS AGENT PATH (Experimental Streaming) ──
         if request.user_id == OS_USER_ID:
-            # For simplicity, we wrap the non-streaming agent logic in an iterator
-            response = await self.process(request, db, session_id, request_id)
-            # Re-format as SSE
             import json
-            yield f"data: {json.dumps({'event': 'token', 'data': response.message.content})}\n\n"
+            yield f"data: {json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}\n\n"
+            
+            history = await self.memory.get_conversation(session_id)
+            from langchain_core.messages import HumanMessage, AIMessage
+            lc_history = []
+            for m in history[:-1]:
+                if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
+                else: lc_history.append(AIMessage(content=m.content))
+
+            # Run agent and yield steps as they happen
+            # We wrap the engine's internal step logging or use a callback if available.
+            # For now, we manually iterate or just yield the final trace as 'thinking' steps.
+            response_text, trace = await self.agent_engine.run(
+                goal=user_message,
+                history=lc_history,
+                images=request.images
+            )
+            
+            for step in trace:
+                yield f"data: {json.dumps({'event': 'thought', 'data': step})}\n\n"
+                await asyncio.sleep(0.1)
+
+            await self.memory.add_message(
+                session_id,
+                Message(role=Role.ASSISTANT, content=response_text),
+                request_id=request_id,
+                user_id=request.user_id
+            )
+            yield f"data: {json.dumps({'event': 'token', 'data': response_text})}\n\n"
             yield f"data: {json.dumps({'event': 'done'})}\n\n"
             return
 

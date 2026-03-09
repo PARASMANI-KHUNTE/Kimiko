@@ -143,6 +143,43 @@ class MemoryManager:
             await self.semantic.delete(memory.vector_id)
         return await self.long_term.delete(db, memory_id)
 
+    # ── User Activity (Telemetry) ──
+
+    async def record_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        action: str,
+        app_name: str | None = None,
+        file_path: str | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        """Record OS-level user activity."""
+        await self.long_term.record_activity(
+            db, user_id, action, app_name, file_path, metadata
+        )
+
+    async def get_recent_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Get recent user activities."""
+        activities = await self.long_term.get_recent_activity(db, user_id, limit)
+        import json
+        return [
+            {
+                "id": str(a.id),
+                "action": a.action,
+                "app_name": a.app_name,
+                "file_path": a.file_path,
+                "timestamp": a.timestamp,
+                "metadata": json.loads(a.metadata_json) if a.metadata_json else {},
+            }
+            for a in activities
+        ]
+
     # ── Semantic Search ──
 
     async def search(

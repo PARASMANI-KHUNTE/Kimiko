@@ -503,6 +503,49 @@
             font-style: italic;
         }
 
+        .suggestion-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            margin: 10px 20px 0;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 64, 0.4);
+            background: rgba(255, 215, 64, 0.08);
+            flex-shrink: 0;
+        }
+
+        .suggestion-title {
+            font-size: 0.72rem;
+            color: var(--warning);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+        }
+
+        .suggestion-text {
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+        }
+
+        .suggestion-btn {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .suggestion-btn.primary {
+            border-color: rgba(0, 229, 255, 0.5);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+
         /* ── SCAN LINE ── */
         @keyframes scanline {
             0% {
@@ -570,9 +613,16 @@
             <div class="tab active" data-tab="chat">💬 Chat</div>
             <div class="tab" data-tab="screens">🖥️ Screens</div>
             <div class="tab" data-tab="system">📊 System</div>
-            <div class="tab" data-tab="files">📂 Files</div>
-            <div class="tab" data-tab="terminal">💻 Terminal</div>
+            <div class="tab" data-tab="files" onclick="loadFiles()">📂 Files</div>
+            <div class="tab" data-tab="terminal" onclick="loadTerminalHistory()">💻 Terminal</div>
             <div class="tab" data-tab="memory">🧠 Memory</div>
+        </div>
+
+        <div class="suggestion-bar" id="suggestion-bar">
+            <div class="suggestion-title" id="suggestion-title">Proactive Suggestion</div>
+            <div class="suggestion-text" id="suggestion-text"></div>
+            <button class="suggestion-btn primary" id="suggestion-ask-btn">Ask Kimiko</button>
+            <button class="suggestion-btn" id="suggestion-dismiss-btn">Dismiss</button>
         </div>
 
         <!-- CHAT PANEL -->
@@ -685,6 +735,7 @@
                 if (tab.dataset.tab === 'screens') loadMonitors();
                 if (tab.dataset.tab === 'memory') loadMemories();
                 if (tab.dataset.tab === 'files') loadFiles();
+                if (tab.dataset.tab === 'terminal') loadTerminalHistory();
             };
         });
 
@@ -697,9 +748,14 @@
                     const overlay = document.getElementById('approval-overlay');
                     if (data.pending) {
                         currentActionId = data.pending.id;
-                        const text = data.pending.type === 'terminal'
-                            ? `Execute command: <br><code style="background:rgba(255,255,255,0.1); padding:4px; border-radius:4px;">${data.pending.command}</code>`
-                            : `Write file to: <br><code>${data.pending.path}</code>`;
+                        let text = `Action requested: <br><code>${data.pending.type}</code>`;
+                        if (data.pending.type === 'terminal') {
+                            text = `Execute command: <br><code style="background:rgba(255,255,255,0.1); padding:4px; border-radius:4px;">${data.pending.command}</code>`;
+                        } else if (data.pending.type === 'file_write') {
+                            text = `Write file to: <br><code>${data.pending.path}</code>`;
+                        } else if (data.pending.type === 'automation') {
+                            text = `Automation action: <br><code>${data.pending.action}</code>`;
+                        }
                         document.getElementById('approval-text').innerHTML = text;
                         overlay.style.display = 'flex';
                     } else {
@@ -730,9 +786,117 @@
             });
         };
 
-        function loadFiles() {
-            document.getElementById('file-list').innerHTML = '<div class="no-data">Host file browser optimization in progress...</div>';
+        let activeSuggestion = null;
+
+        function hideSuggestionBar() {
+            document.getElementById('suggestion-bar').style.display = 'none';
+            activeSuggestion = null;
         }
+
+        function renderSuggestion(suggestion) {
+            const bar = document.getElementById('suggestion-bar');
+            if (!suggestion) {
+                hideSuggestionBar();
+                return;
+            }
+
+            activeSuggestion = suggestion;
+            document.getElementById('suggestion-title').textContent = suggestion.title || 'Proactive Suggestion';
+            document.getElementById('suggestion-text').textContent = suggestion.message || 'Kimiko noticed something important.';
+            bar.style.display = 'flex';
+        }
+
+        function pollSuggestions() {
+            fetch(`${BRIDGE}/suggestions/pending`)
+                .then(r => r.json())
+                .then(data => renderSuggestion(data.pending || null))
+                .catch(() => { });
+        }
+        setInterval(pollSuggestions, 3000);
+        pollSuggestions();
+
+        document.getElementById('suggestion-dismiss-btn').onclick = () => {
+            if (!activeSuggestion) return;
+            fetch(`${BRIDGE}/suggestions/dismiss`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ suggestion_id: activeSuggestion.id })
+            }).then(() => {
+                hideSuggestionBar();
+            });
+        };
+
+        document.getElementById('suggestion-ask-btn').onclick = () => {
+            if (!activeSuggestion) return;
+            const query = activeSuggestion.suggested_query || activeSuggestion.message || '';
+            if (!query) return;
+            submitQuery(query);
+            fetch(`${BRIDGE}/suggestions/dismiss`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ suggestion_id: activeSuggestion.id })
+            }).finally(() => hideSuggestionBar());
+        };
+
+        let currentPath = '';
+
+        function loadFiles(path = '') {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '<div class="no-data">Scanning...</div>';
+
+            fetch(`${BRIDGE}/files/list?path=${encodeURIComponent(path)}`)
+                .then(r => r.json())
+                .then(data => {
+                    currentPath = data.path;
+                    let html = `<div class="process-header" style="grid-template-columns: 2fr 1fr; cursor:pointer;" onclick="loadFiles('${data.path.split(/[\\/]/).slice(0, -1).join('/')}')"><div>📁 .. (Up)</div><div>Size</div></div>`;
+                    data.items.forEach(item => {
+                        const icon = item.is_dir ? '📁' : '📄';
+                        html += `
+                            <div class="process-row" style="grid-template-columns: 2fr 1fr; cursor:pointer;" onclick="${item.is_dir ? `loadFiles('${item.path.replace(/\\/g, '/')}')` : `readFile('${item.path.replace(/\\/g, '/')}')`}">
+                                <div class="process-name">${icon} ${item.name}</div>
+                                <div>${item.is_dir ? '-' : (item.size / 1024).toFixed(1) + ' KB'}</div>
+                            </div>
+                        `;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(err => {
+                    list.innerHTML = `<div class="no-data">Error: ${err}</div>`;
+                });
+        }
+
+        function readFile(path) {
+            fetch(`${BRIDGE}/files/read?path=${encodeURIComponent(path)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) alert(data.error);
+                    else {
+                        // For Phase 9, we just show a snippet in a popup or console
+                        console.log("File content:", data.content);
+                        alert(`File: ${data.path}\n\n${data.content.substring(0, 500)}...`);
+                    }
+                });
+        }
+
+        function loadTerminalHistory() {
+            fetch(`${BRIDGE}/terminal/history`)
+                .then(r => r.json())
+                .then(data => {
+                    const hist = document.getElementById('terminal-history');
+                    let html = '';
+                    (data.history || []).forEach(h => {
+                        const time = new Date(h.timestamp * 1000).toLocaleTimeString();
+                        const color = h.status === 'success' ? 'var(--success)' : 'var(--danger)';
+                        html += `<div style="margin-bottom:8px;">
+                            <span style="color:var(--text-secondary)">[${time}]</span> 
+                            <span style="color:${color}">$ ${h.command}</span>
+                            <div style="margin-left:20px; color:rgba(255,255,255,0.4); font-size:0.7rem;">${h.result_preview}...</div>
+                        </div>`;
+                    });
+                    if (html) hist.innerHTML = html;
+                });
+        }
+        setInterval(loadTerminalHistory, 5000);
 
         // ── Chat ──
         const input = document.getElementById('query-input');
@@ -758,13 +922,16 @@
             input.disabled = true;
             sendBtn.disabled = true;
 
+            // For Phase 9, we transition to SSE if the goal involves OS tasks.
+            // The /query endpoint will now return a stream if requested.
+            // Simplified implementation for current bridge:
             fetch(`${BRIDGE}/query`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query })
             })
-                .then(r => r.json())
-                .then(data => {
+                .then(async response => {
+                    const data = await response.json();
                     thinkingMsg.remove();
                     addMessage(data.response, 'assistant');
                     input.disabled = false;

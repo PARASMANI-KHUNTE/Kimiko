@@ -40,10 +40,17 @@ async def run_agent_task(
         else:
             await orchestrator.scheduler.schedule_chat("qwen2.5")
             
+        history = await orchestrator.memory.get_conversation(session_id)
+        from langchain_core.messages import HumanMessage, AIMessage
+        lc_history = []
+        for m in history:
+            if m.role == "user": lc_history.append(HumanMessage(content=m.content))
+            else: lc_history.append(AIMessage(content=m.content))
+
         answer, trace = await orchestrator.agent_engine.run(
             goal=body.goal,
+            history=lc_history,
             images=body.images
-            # history=history # TODO: Load history from memory
         )
         
         return AgentTaskResponse(

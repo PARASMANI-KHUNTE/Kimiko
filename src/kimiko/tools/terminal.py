@@ -37,14 +37,15 @@ class TerminalTool(BaseTool):
                 import asyncio
                 for _ in range(60):
                     await asyncio.sleep(2)
-                    # Check if action is still pending. If not, it means confirmed or denied.
-                    # We need a status endpoint.
                     check_resp = await client.get("http://127.0.0.1:8001/approval/pending")
                     pending = check_resp.json().get("pending")
                     if not pending:
-                        # Success! The bridge clears pending on confirm/deny.
-                        # Now WE need to get the result of the LAST action.
-                        return f"Action {action_id} completed or denied by user. Check host for results."
+                        # Success! Now retrieve the result
+                        result_resp = await client.get(f"http://127.0.0.1:8001/approval/result/{action_id}")
+                        if result_resp.status_code == 200:
+                            res = result_resp.json()
+                            return f"STDOUT:\n{res.get('stdout')}\nSTDERR:\n{res.get('stderr')}\nExit Code: {res.get('exit_code')}"
+                        return f"Action {action_id} completed, but result could not be retrieved."
             
             return f"Action {action_id} timed out waiting for user approval."
         except Exception as e:
