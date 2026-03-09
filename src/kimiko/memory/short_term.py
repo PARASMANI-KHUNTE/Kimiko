@@ -36,7 +36,7 @@ class ShortTermMemory:
         key = self._messages_key(session_id)
 
         raw = {
-            "role": message.role,
+            "role": message.role.value if hasattr(message.role, "value") else message.role,
             "content": message.content,
             "images": message.images or [],
             "timestamp": (message.timestamp or datetime.utcnow()).isoformat(),

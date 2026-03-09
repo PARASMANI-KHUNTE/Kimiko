@@ -18,13 +18,22 @@ INTENT_MODEL_MAP: dict[Intent, str] = {
     Intent.CHAT: "qwen2.5",
     Intent.QUESTION: "qwen2.5",
     Intent.GREETING: "qwen2.5",
-    Intent.CODE: "codellama",
+    Intent.CODE: "deepseek-r1:7b",
     Intent.IMAGE_ANALYSIS: "qwen2-vl",
     Intent.DOCUMENT_QUERY: "qwen2.5",
     Intent.AGENT_TASK: "qwen2.5",
     Intent.TOOL_REQUEST: "qwen2.5",
     Intent.SPEECH: "qwen2.5",
 }
+
+# All models available for user selection (must be pulled in Ollama)
+AVAILABLE_MODELS = [
+    {"id": "qwen2.5",         "name": "Qwen 2.5",        "type": "chat"},
+    {"id": "deepseek-r1:7b",  "name": "DeepSeek R1 7B",  "type": "reasoning"},
+    {"id": "codellama",       "name": "CodeLlama",        "type": "code"},
+    {"id": "llama3.2",        "name": "Llama 3.2",        "type": "chat"},
+    {"id": "qwen2-vl",        "name": "Qwen 2 VL",        "type": "vision"},
+]
 
 # Intents that MUST stay local for privacy (memory, identity, personal data)
 PRIVACY_LOCAL_INTENTS: set[Intent] = {

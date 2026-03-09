@@ -7,6 +7,7 @@ memory with memory promotion logic (Fix #4 review round 2).
 from __future__ import annotations
 
 import structlog
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.memory.conversation_summarizer import ConversationSummarizer
@@ -83,11 +84,20 @@ class MemoryManager:
         # Memory promotion: only index important memories in vector DB
         vector_id = None
         if importance >= PROMOTION_IMPORTANCE_THRESHOLD:
+            created_ts = (
+                memory.created_at.timestamp()
+                if getattr(memory, "created_at", None) is not None
+                else datetime.utcnow().timestamp()
+            )
             vector_id = await self.semantic.index(
                 text=text,
                 user_id=user_id,
                 tags=tags,
                 memory_type=memory_type,
+                metadata={
+                    "created_timestamp": created_ts,
+                    "memory_id": str(memory.id),
+                },
                 request_id=request_id,
             )
             memory.vector_id = vector_id
@@ -116,11 +126,12 @@ class MemoryManager:
         return [
             {
                 "id": str(m.id),
+                "user_id": str(m.user_id),
                 "text": m.text,
                 "tags": m.tags or [],
                 "memory_type": m.memory_type,
                 "importance": m.importance,
-                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "created_at": m.created_at if m.created_at else datetime.utcnow(),
             }
             for m in memories
         ]

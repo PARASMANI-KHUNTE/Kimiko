@@ -68,13 +68,24 @@ class FactStore:
         await self.session.commit()
         return stored_count
 
-    async def get_facts(self, user_id: str, category: str | None = None) -> list[UserFact]:
-        """Retrieve high-confidence facts for a user."""
+    async def get_facts(
+        self, user_id: str, category: str | None = None
+    ) -> list[UserFact]:
+        """Retrieve all active facts for a user, optionally filtered by category."""
         user_uuid = uuid.UUID(user_id)
-        stmt = select(UserFact).where(
-            and_(
-                UserFact.user_id == user_uuid,
-                UserFact.confidence_score >= MIN_CONFIDENCE
+
+        stmt = (
+            select(UserFact)
+            .where(
+                and_(
+                    UserFact.user_id == user_uuid,
+                    UserFact.confidence_score >= MIN_CONFIDENCE
+                )
+            )
+            .order_by(
+                UserFact.last_seen.desc(),
+                UserFact.updated_at.desc(),
+                UserFact.created_at.desc(),
             )
         )
         if category:

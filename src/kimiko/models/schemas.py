@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 # ── Enums ──
@@ -41,7 +42,7 @@ class StreamEventType(str, Enum):
 
 
 class Message(BaseModel):
-    role: str
+    role: Role
     content: str
     images: list[str] | None = None  # Base64 encoded images
     timestamp: datetime | None = None

@@ -40,3 +40,13 @@ When you ask a question, the **Retrieval Engine**:
    - `0.05 * fact_confidence`: Prioritizes verified facts over random chat logs.
    - `1.5x Multiplier`: Applied to `identity` and `preference` categories.
 3. The **Token Manager** then scales the history based on remaining context window room.
+
+### Conflict Resolution Ordering
+
+For contradictory memories/facts, Kimiko now applies deterministic recency ordering before prompt assembly:
+- `last_seen` (newest first)
+- `updated_at` (tiebreaker)
+- `created_at` (final recency tiebreaker)
+- For mutable preference statements (for example, `favorite ... is ...`), only the newest winner is kept in context and its confidence is preserved from the strongest matching candidate.
+
+This prevents stale ties where an older fact (for example, "Python") could appear before a newer update (for example, "Rust").

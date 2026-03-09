@@ -1,8 +1,9 @@
-"""Chat endpoint — POST /v1/chat and POST /v1/chat/stream."""
+"""Chat endpoint — POST /v1/chat, POST /v1/chat/stream, GET /v1/chat/history/{session_id}."""
 
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from sse_starlette.sse import EventSourceResponse
@@ -13,9 +14,32 @@ from kimiko.api.deps import get_db_session, get_orchestrator
 from kimiko.api.middleware.auth import verify_api_key
 from kimiko.api.middleware.rate_limit import rate_limit_middleware
 from kimiko.core.orchestrator import RequestOrchestrator
+from kimiko.memory.short_term import ShortTermMemory
 from kimiko.models.schemas import ChatRequest, ChatResponse
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+@router.get("/history/{session_id}")
+async def get_chat_history(
+    session_id: str,
+    _auth: dict = Depends(verify_api_key),
+) -> dict[str, Any]:
+    """Return the conversation history for a given session (from Redis short-term memory)."""
+    stm = ShortTermMemory()
+    messages = await stm.get_messages(session_id)
+    return {
+        "session_id": session_id,
+        "messages": [
+            {
+                "role": msg.role.value if hasattr(msg.role, "value") else msg.role,
+                "content": msg.content,
+                "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
+            }
+            for msg in messages
+        ],
+    }
+
 
 
 @router.post("", response_model=ChatResponse)

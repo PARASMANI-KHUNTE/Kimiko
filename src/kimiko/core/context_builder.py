@@ -12,6 +12,7 @@ Prompt structure:
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import structlog
 
 from kimiko.config import get_settings
@@ -20,7 +21,7 @@ from kimiko.models.schemas import Message, RetrievalResult, Role
 
 logger = structlog.get_logger(__name__)
 
-DEFAULT_SYSTEM_PROMPT = """You are Kimiko, a grounded AI assistant.
+BASE_SYSTEM_PROMPT = """You are Kimiko, a grounded AI assistant.
 
 CORE IDENTITY:
 - You were created by Paras, a human developer.
@@ -33,9 +34,22 @@ GROUNDING RULES:
 3. ZERO GUESSING: If a fact is NOT in the provided context, you MUST say: "I do not have enough information in my memory to answer this."
 4. TOOL MANDATE: If the user asks for external information (web, files, news), you MUST suggest or use a tool. Never invent external facts.
 5. NO CORPORATE HALLUCINATION: Paras is your human creator. Do not invent corporate affiliations (e.g., Alibaba) for him.
+6. CONFLICT RESOLUTION: If provided facts or memories contain contradicting information, ALWAYS prioritize and trust the FIRST relevant piece of information presented, as the context is ordered by recency and relevance.
+7. DATETIME: You always know the current date and time — it is injected into your context. Never say you don't know the current time.
 
 You provide accurate, evidence-based responses. Stay grounded. Stay honest."""
 
+
+def _build_default_system_prompt() -> str:
+    """Build the system prompt with the injected current UTC datetime."""
+    utc_now = datetime.now(timezone.utc)
+    date_str = utc_now.strftime("%A, %B %d, %Y")
+    time_str = utc_now.strftime("%H:%M UTC")
+    return f"{BASE_SYSTEM_PROMPT}\n\nCURRENT DATETIME: {date_str}, {time_str}"
+
+
+def DEFAULT_SYSTEM_PROMPT() -> str:  # kept as callable for backward compat
+    return _build_default_system_prompt()
 
 class ContextBuilder:
     """Assembles LLM prompts from system instructions, retrieval results, history, and user message."""
@@ -69,7 +83,7 @@ class ContextBuilder:
             knowledge_tokens=retrieval_tokens,
             image_count=len(images) if images else 0
         )
-        system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+        system_prompt = system_prompt or _build_default_system_prompt()
 
         # 1. System prompt (separated)
         sys_text = self.token_manager.truncate_text(system_prompt, budget.get("system", 400))
@@ -134,7 +148,7 @@ class ContextBuilder:
         )
         
         if get_settings().debug_prompt:
-            logger.debug(
+            logger.warning(
                 "llm_prompt_debug",
                 system=sys_text,
                 prompt=user_prompt,
@@ -161,7 +175,7 @@ class ContextBuilder:
     ) -> str:
         """Build just the system prompt with knowledge context (for chat-style APIs)."""
         budget = self.token_manager.allocate_budget(model)
-        prompt = base_prompt or DEFAULT_SYSTEM_PROMPT
+        prompt = base_prompt or _build_default_system_prompt()
 
         if retrieval_results:
             knowledge = self._build_knowledge_section(

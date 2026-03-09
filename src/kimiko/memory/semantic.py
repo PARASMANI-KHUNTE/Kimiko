@@ -49,14 +49,21 @@ class SemanticMemory:
 
         # Create point
         point_id = str(uuid.uuid4())
+        base_metadata = metadata or {}
+        event_timestamp = (
+            base_metadata.get("timestamp")
+            or base_metadata.get("created_timestamp")
+            or time.time()
+        )
+
         payload = {
             "user_id": user_id,
             "text": text,
             "tags": tags or [],
             "type": memory_type,
             "importance": importance,
-            "timestamp": int(time.time()),
-            **(metadata or {}),
+            "timestamp": event_timestamp,
+            **base_metadata,
         }
 
         await qdrant.upsert(
@@ -130,6 +137,7 @@ class SemanticMemory:
                     "tags": hit.payload.get("tags", []),
                     "type": hit.payload.get("type", "general"),
                     "timestamp": hit.payload.get("timestamp", 0),
+                    "created_timestamp": hit.payload.get("created_timestamp"),
                     "user_id": hit.payload.get("user_id", ""),
                     "importance": hit.payload.get("importance", 0.5),
                 },

@@ -99,15 +99,17 @@ class RetrievalRanker:
             )
             
             # Phase 3.5: Priority Boost for identity and preference facts
-            fact_category = item.get("category")
+            fact_category = item.get("category") or metadata.get("category") or metadata.get("type")
             if fact_category in ("identity", "preference"):
                 final_score += 1.5
 
-            scored_item = {**item, "final_score": final_score}
+            scored_item = {**item, "final_score": final_score, "_timestamp": timestamp}
             scored.append(scored_item)
 
-        # Sort by final score descending
-        scored.sort(key=lambda x: x["final_score"], reverse=True)
+        # Sort by final score descending, then by timestamp descending (newer first) as tiebreaker
+        # This ensures that when two memories have similar relevance scores,
+        # the more recent one appears first — critical for conflict resolution.
+        scored.sort(key=lambda x: (x["final_score"], x.get("_timestamp", 0)), reverse=True)
 
         logger.debug(
             "retrieval_ranked",

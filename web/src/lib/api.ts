@@ -1,4 +1,4 @@
-const API_BASE = ""; // Alway use relative paths for Next.js proxy
+const API_BASE = ""; // Always use relative paths for Next.js proxy
 
 const headers = {
     "Content-Type": "application/json",
@@ -10,6 +10,19 @@ export interface ChatResponse {
         content: string;
         model: string;
     };
+}
+
+export interface ChatMessage {
+    role: "user" | "assistant";
+    content: string;
+    timestamp?: string;
+}
+
+export interface ModelEntry {
+    id: string;
+    name: string;
+    type: string;
+    available: boolean;
 }
 
 export interface Fact {
@@ -38,6 +51,28 @@ export async function sendChat(
 
     if (!resp.ok) throw new Error(`API error: ${resp.status}`);
     return resp.json();
+}
+
+export async function getChatHistory(sessionId: string): Promise<ChatMessage[]> {
+    try {
+        const resp = await fetch(`${API_BASE}/v1/chat/history/${sessionId}`, { headers });
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return (data.messages || []) as ChatMessage[];
+    } catch {
+        return [];
+    }
+}
+
+export async function getModels(): Promise<ModelEntry[]> {
+    try {
+        const resp = await fetch(`${API_BASE}/v1/models/catalog`, { headers });
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        return data.models || [];
+    } catch {
+        return [];
+    }
 }
 
 export async function getFacts(userId: string = "default"): Promise<Fact[]> {
@@ -89,16 +124,14 @@ export async function* streamChat(
 
                     const eventData = JSON.parse(content);
 
-                    // Handle Kimiko's StreamEvent format
                     if (eventData.event === "token" && eventData.data) {
                         yield eventData.data;
                     } else if (eventData.event === "done") {
-                        return; // Stream finished
+                        return;
                     } else if (eventData.choices?.[0]?.delta?.content) {
-                        // Fallback for OpenAI-style responses if used
                         yield eventData.choices[0].delta.content;
                     }
-                } catch (e) {
+                } catch {
                     // Skip malformed SSE lines
                 }
             }
@@ -117,7 +150,6 @@ export async function getMetrics(): Promise<Record<string, number>> {
     for (const line of lines) {
         if (line.startsWith("#") || !line.trim()) continue;
 
-        // Prometheus format: metric_name{label="val"} value
         const match = line.match(/^([a-zA-Z_][a-zA-Z0-9_]*)(?:\{.*\})?\s+(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/);
         if (match) {
             const name = match[1];
