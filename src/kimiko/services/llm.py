@@ -99,6 +99,11 @@ class OllamaService(BaseLLMService):
         # Track warm models
         self._warm_models: set[str] = set()
 
+    def _is_vision_model(self, model: str) -> bool:
+        """Heuristic to check if a model supports vision."""
+        vision_keywords = {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-"}
+        return any(k in model.lower() for k in vision_keywords)
+
     async def close(self) -> None:
         """Close the HTTP client."""
         await self._client.aclose()
@@ -128,8 +133,10 @@ class OllamaService(BaseLLMService):
             "stream": False,
             "options": {"temperature": temperature},
         }
-        if images:
+        if images and self._is_vision_model(model):
             payload["images"] = images
+        elif images:
+            logger.warning("omitting_images_for_non_vision_model", model=model)
         if system:
             payload["system"] = system
         if max_tokens:
@@ -171,8 +178,10 @@ class OllamaService(BaseLLMService):
             "stream": True,
             "options": {"temperature": temperature},
         }
-        if images:
+        if images and self._is_vision_model(model):
             payload["images"] = images
+        elif images:
+            logger.warning("omitting_images_for_non_vision_model", model=model)
         if system:
             payload["system"] = system
         if max_tokens:

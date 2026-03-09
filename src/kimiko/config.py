@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     # ── Token Budgets ──
     max_context_tokens: int = 8192
 
+    # ── OS Integration (Phase 7) ──
+    os_hotkey: str = "ctrl+space"
+    os_model: str = "qwen2.5"  # Default, override with vision model in .env if available
+    os_screenshot_quality: int = 70
+    os_screenshot_width: int = 1024
+
     @property
     def is_development(self) -> bool:
         return self.env == Environment.DEVELOPMENT

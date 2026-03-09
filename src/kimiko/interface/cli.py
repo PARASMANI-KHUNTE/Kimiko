@@ -11,6 +11,7 @@ Commands:
 from __future__ import annotations
 
 import sys
+import threading
 from typing import Optional
 
 import httpx
@@ -23,19 +24,21 @@ from rich.table import Table
 from rich.prompt import Prompt
 from rich.text import Text
 from rich import box
+from kimiko.config import get_settings
 
 console = Console()
+settings = get_settings()
 app = typer.Typer(
     name="kimiko",
     help="🏯 Kimiko AI — Your local intelligent assistant.",
     add_completion=False,
 )
 
-API_URL = "http://localhost:8000/v1"
+API_URL = f"http://{settings.api_host}:{settings.api_port}/v1"
 
 
 def _get_headers() -> dict:
-    return {"X-API-Key": "test-key-123", "Content-Type": "application/json"}
+    return {"X-API-Key": settings.api_secret_key, "Content-Type": "application/json"}
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -256,47 +259,28 @@ def plugins():
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  AGENT (run a task)
+#  OS AGENT (Ctrl+Space assistant)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 @app.command()
-def agent(
-    goal: str = typer.Argument(..., help="The goal for the agent to accomplish."),
-    max_steps: int = typer.Option(5, help="Maximum reasoning steps."),
-):
-    """Run an agent task with reasoning and tools."""
-    console.print()
-    console.print(f"[dim]🤖 Agent Goal: {goal}[/dim]")
-    console.print()
-
-    payload = {"goal": goal, "max_steps": max_steps}
-
+def os_agent():
+    """Start the background OS Assistant (Ctrl+Space to summon)."""
+    console.print(Panel(
+        "[bold cyan]🚀 Kimiko OS Assistant[/bold cyan]\n"
+        "[dim]Running in background. Press [bold white]Ctrl+Space[/bold white] to summon Kimiko anywhere.[/dim]\n"
+        "[dim]Press Ctrl+C in this terminal to stop.[/dim]",
+        border_style="cyan",
+        box=box.DOUBLE,
+    ))
+    
     try:
-        with httpx.Client(timeout=180.0, headers=_get_headers()) as client:
-            resp = client.post(f"{API_URL}/agent/run", json=payload)
-
-            if resp.status_code == 200:
-                data = resp.json()
-                answer = data.get("answer", "No answer.")
-                steps = data.get("steps", [])
-
-                if steps:
-                    console.print(Panel(
-                        "\n".join([f"[dim]Step {i+1}:[/dim] {s}" for i, s in enumerate(steps)]),
-                        title="Agent Reasoning",
-                        border_style="yellow",
-                    ))
-
-                console.print(Panel(
-                    Markdown(answer),
-                    title="🏯 Agent Result",
-                    border_style="green",
-                    padding=(1, 2),
-                ))
-            else:
-                console.print(f"[red]Error {resp.status_code}: {resp.text}[/red]")
-
-    except httpx.ConnectError:
-        console.print("[red]❌ Cannot connect to Kimiko.[/red]")
+        from kimiko.os.assistant import HotkeyManager
+        manager = HotkeyManager()
+        manager.start()
+    except ImportError as e:
+        console.print(f"[red]Error: OS dependencies not found ({e}).[/red]")
+        console.print("[yellow]Run: pip install keyboard mss pyperclip pygetwindow Pillow[/yellow]")
+    except KeyboardInterrupt:
+        console.print("\n[dim]Stopping OS Assistant...[/dim]")
 
 
 def main():

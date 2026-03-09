@@ -46,6 +46,7 @@ class User(Base):
     api_keys: Mapped[list[ApiKey]] = relationship(back_populates="user", cascade="all, delete-orphan")
     memories: Mapped[list[Memory]] = relationship(back_populates="user", cascade="all, delete-orphan")
     facts: Mapped[list[UserFact]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    activities: Mapped[list[UserActivity]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class ApiKey(Base):
@@ -150,4 +151,35 @@ class UserFact(Base):
         Index("ix_user_facts_user_id", "user_id"),
         Index("ix_user_facts_category", "category"),
         Index("ix_user_facts_lookup", "user_id", "category", "fact", unique=True),
+    )
+
+
+class UserActivity(Base):
+    """Tracks OS-level telemetry (apps, files, commands)."""
+
+    __tablename__ = "user_activity"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    
+    app_name: Mapped[str | None] = mapped_column(String(100))
+    file_path: Mapped[str | None] = mapped_column(Text)
+    action: Mapped[str] = mapped_column(String(50))   # open, close, edit, run
+    
+    metadata_json: Mapped[dict | None] = mapped_column(Text) # Additional JSON context
+    
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relationships
+    user: Mapped[User] = relationship(back_populates="activities")
+
+    __table_args__ = (
+        Index("ix_user_activity_user_id", "user_id"),
+        Index("ix_user_activity_timestamp", "timestamp"),
     )

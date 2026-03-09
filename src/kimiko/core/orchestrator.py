@@ -40,6 +40,11 @@ from kimiko.tools.core import CalculatorTool, FileSystemTool
 from kimiko.tools.registry import ToolRegistry
 from kimiko.tools.search import WebSearchTool
 from kimiko.tools.datetime_tool import DateTimeTool
+from kimiko.tools.terminal import TerminalTool
+from kimiko.tools.os_filesystem import OSFileSystemTool
+
+# OS Agent Identity
+OS_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 logger = structlog.get_logger(__name__)
 
@@ -64,6 +69,8 @@ class RequestOrchestrator:
         self.tool_registry.register(FileSystemTool(allowed_paths=["./"]))
         self.tool_registry.register(WebSearchTool())
         self.tool_registry.register(DateTimeTool())
+        self.tool_registry.register(TerminalTool())
+        self.tool_registry.register(OSFileSystemTool())
         
         # Load external plugins dynammically from src/kimiko/plugins/installed/
         self.plugin_manager = PluginManager(self.tool_registry)
@@ -75,7 +82,7 @@ class RequestOrchestrator:
         
         self.scheduler = ModelScheduler()
 
-    async def _validate_citations(self, response: str, results: list[RetrievalResult]) -> str:
+    async def _validate_citations(self, response: str, results: list[Any]) -> str:
         """Heuristic to ensure citations match retrieved sources."""
         import re
         valid_sources = {r.source.lower() for r in results}
@@ -94,7 +101,7 @@ class RequestOrchestrator:
         
         return response
 
-    async def _verify_grounding(self, response: str, results: list[RetrievalResult], model: str) -> bool:
+    async def _verify_grounding(self, response: str, results: list[Any], model: str) -> bool:
         """Second-pass verification: Does the context support the answer?"""
         if not results: return False
         
@@ -121,7 +128,7 @@ class RequestOrchestrator:
             return True # Fallback to true if verifier fails
 
     @staticmethod
-    def _passes_dynamic_threshold(item: RetrievalResult, default_threshold: float) -> bool:
+    def _passes_dynamic_threshold(item: Any, default_threshold: float) -> bool:
         """Source-aware query-time filtering."""
         if item.source in {"long_term", "fact_store"}:
             return item.score >= 0.45
@@ -134,34 +141,49 @@ class RequestOrchestrator:
         session_id: str | None = None,
         request_id: str | None = None,
     ) -> ChatResponse:
-        """Process a non-streaming chat request through the full pipeline.
-
-        Pipeline:
-        1. Parse request + extract user message
-        2. Store user message in session
-        3. Classify intent
-        4. Retrieve relevant context (memories, knowledge)
-        5. Build prompt with token budgeting
-        6. Route to appropriate model
-        7. Execute LLM generation
-        8. Store assistant response
-        9. Return response
-        """
+        """Process a chat request, routing to Agent if it's an OS request."""
         request_id = request_id or str(uuid.uuid4())[:8]
-        start_time = time.time()
-
-        # Extract user message (last message in the list)
         user_message = request.message
         session_id = request.session_id or request_id
 
-        logger.info(
-            "pipeline_start",
-            request_id=request_id,
-            session_id=session_id,
-            message_preview=user_message[:80],
-        )
+        # ── OS AGENT PATH ──
+        if request.user_id == OS_USER_ID:
+            logger.info("routing_to_agent_engine", session_id=session_id)
+            await self.memory.add_message(
+                session_id,
+                Message(role=Role.USER, content=user_message),
+                request_id=request_id,
+                user_id=request.user_id
+            )
+            history = await self.memory.get_conversation(session_id)
+            from langchain_core.messages import HumanMessage, AIMessage
+            lc_history = []
+            for m in history[:-1]:
+                if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
+                else: lc_history.append(AIMessage(content=m.content))
 
-        # 1. Store user message in session
+            response_text, trace = await self.agent_engine.run(
+                goal=user_message,
+                history=lc_history,
+                images=request.images
+            )
+            await self.memory.add_message(
+                session_id,
+                Message(role=Role.ASSISTANT, content=response_text),
+                request_id=request_id,
+                user_id=request.user_id
+            )
+            return ChatResponse(
+                id=request_id,
+                session_id=session_id,
+                message=Message(role=Role.ASSISTANT, content=response_text),
+                model="agent-orchestrated",
+                intent="OS_AGENT",
+                usage=TokenUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
+            )
+
+        # ── STANDARD CHAT PATH ──
+        start_time = time.time()
         await self.memory.add_message(
             session_id,
             Message(role=Role.USER, content=user_message),
@@ -169,21 +191,12 @@ class RequestOrchestrator:
             user_id=request.user_id
         )
 
-        # 2. Classify intent
         intent_result = self.intent_classifier.classify(user_message)
-        
-        # Force retrieval if it's a factual question
-        force_retrieval = intent_result.intent == Intent.QUESTION
-
-        # 3. Route model
         model = await self.model_router.route(
             intent=intent_result.intent,
             preferred_model=request.model,
         )
 
-        # 4. Retrieval step
-        # Phase 5.7: Adaptive Thresholding
-        # Complexity-based thresholding: longer Queries/Questions need higher confidence
         is_complex = len(user_message) > 60 or "?" in user_message
         dynamic_threshold = 0.75 if is_complex else 0.60
         
@@ -194,28 +207,22 @@ class RequestOrchestrator:
             db=db,
             top_k=5, 
         )
-        
-        # Filter results by dynamic threshold
         retrieval_results = [
             r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
         ]
 
-        # 5. Get conversation history + summary
         conversation_history = await self.memory.get_conversation(session_id)
         conversation_summary = await self.memory.get_conversation_summary(session_id)
 
-        # 6. Build prompt (returns dict with system and prompt)
         prompt_data = self.context_builder.build(
             user_message=user_message,
             model=model,
-            conversation_history=conversation_history[:-1],  # Exclude current message
+            conversation_history=conversation_history[:-1],
             retrieval_results=retrieval_results,
             conversation_summary=conversation_summary,
         )
 
-        # 7. Execute LLM
         try:
-            # Phase 3.5: Schedule Models to prevent VRAM overflow
             if request.images:
                 await self.scheduler.schedule_vision(model)
             else:
@@ -223,8 +230,6 @@ class RequestOrchestrator:
 
             with LLM_GENERATION_DURATION.labels(model=model).time():
                 llm = get_llm_service()
-                
-                # Use the structured prompt data
                 result = await llm.generate(
                     model=model,
                     prompt=prompt_data["prompt"],
@@ -239,8 +244,6 @@ class RequestOrchestrator:
             raise
 
         response_text = result.get("response", "")
-
-        # 8. Store assistant response
         await self.memory.add_message(
             session_id,
             Message(role=Role.ASSISTANT, content=response_text),
@@ -248,7 +251,6 @@ class RequestOrchestrator:
             user_id=request.user_id
         )
 
-        # 9. Build response
         duration = time.time() - start_time
         logger.info(
             "pipeline_complete",
@@ -257,17 +259,13 @@ class RequestOrchestrator:
             intent=intent_result.intent.value,
             duration=f"{duration:.2f}s",
         )
-        # Phase 5.7: Validate Citations
-        response_content = result.get("response", "")
-        validated_content = await self._validate_citations(response_content, retrieval_results)
-
-        # Phase 5.7: Secondary Verification (Refining Hallucination MIT)
+        
+        validated_content = await self._validate_citations(response_text, retrieval_results)
         final_text = validated_content
         if intent_result.intent == Intent.QUESTION and retrieval_results:
             is_supported = await self._verify_grounding(validated_content, retrieval_results, model)
             if not is_supported:
-                logger.warning("grounding_verification_failed", session_id=session_id)
-                final_text = "I do not have enough verified information in my memory to answer this question accurately. [Source: Honest Ignorance]"
+                final_text = "I do not have enough verified information in my memory to answer this question accurately."
 
         return ChatResponse(
             id=request_id,
@@ -289,34 +287,34 @@ class RequestOrchestrator:
         request_id: str | None = None,
         disconnect_event: asyncio.Event | None = None,
     ) -> AsyncIterator[str]:
-        """Process a streaming chat request.
-
-        Same pipeline as process(), but streams LLM tokens via SSE.
-        """
+        """Process a streaming chat request."""
         request_id = request_id or str(uuid.uuid4())[:8]
         user_message = request.message
         session_id = request.session_id or request_id
 
-        # Store user message
+        # ── OS AGENT PATH (No streaming for now) ──
+        if request.user_id == OS_USER_ID:
+            # For simplicity, we wrap the non-streaming agent logic in an iterator
+            response = await self.process(request, db, session_id, request_id)
+            # Re-format as SSE
+            import json
+            yield f"data: {json.dumps({'event': 'token', 'data': response.message.content})}\n\n"
+            yield f"data: {json.dumps({'event': 'done'})}\n\n"
+            return
+
+        # ── STANDARD CHAT PATH ──
         await self.memory.add_message(
             session_id,
             Message(role=Role.USER, content=user_message),
             request_id=request_id,
         )
 
-        # Intent + route
         intent_result = self.intent_classifier.classify(user_message)
-        
-        # Force retrieval if it's a factual question
-        force_retrieval = intent_result.intent == Intent.QUESTION
-        
         model = await self.model_router.route(
             intent=intent_result.intent,
             preferred_model=request.model,
         )
 
-        # Retrieve context (always called, but now we have higher threshold)
-        # Phase 5.7: Adaptive Thresholding
         is_complex = len(user_message) > 60 or "?" in user_message
         dynamic_threshold = 0.75 if is_complex else 0.60
 
@@ -327,8 +325,6 @@ class RequestOrchestrator:
             db=db,
             top_k=5,
         )
-        
-        # Filter results by dynamic threshold
         retrieval_results = [
             r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
         ]
@@ -336,7 +332,6 @@ class RequestOrchestrator:
         conversation_history = await self.memory.get_conversation(session_id)
         conversation_summary = await self.memory.get_conversation_summary(session_id)
 
-        # Build prompt
         prompt_data = self.context_builder.build(
             user_message=user_message,
             model=model,
@@ -345,7 +340,6 @@ class RequestOrchestrator:
             conversation_summary=conversation_summary,
         )
 
-        # Stream from LLM
         if request.images:
             await self.scheduler.schedule_vision(model)
         else:
@@ -361,13 +355,10 @@ class RequestOrchestrator:
             max_tokens=request.max_tokens,
         )
 
-        # Wrap in SSE with backpressure
         collected_tokens: list[str] = []
-
         async for sse_event in self.streaming_engine.stream_response(
             token_stream, model, check_disconnected=disconnect_event
         ):
-            # Collect tokens for storage
             import json
             try:
                 data = json.loads(sse_event.replace("data: ", "").strip())
@@ -375,10 +366,8 @@ class RequestOrchestrator:
                     collected_tokens.append(data.get("data", ""))
             except (json.JSONDecodeError, ValueError):
                 pass
-
             yield sse_event
 
-        # Store complete assistant response
         full_response = "".join(collected_tokens)
         if full_response:
             await self.memory.add_message(
@@ -386,10 +375,3 @@ class RequestOrchestrator:
                 Message(role=Role.ASSISTANT, content=full_response),
                 request_id=request_id,
             )
-
-        logger.info(
-            "stream_pipeline_complete",
-            request_id=request_id,
-            model=model,
-            tokens=len(collected_tokens),
-        )
