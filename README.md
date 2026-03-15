@@ -127,6 +127,86 @@ python -m kimiko.os.assistant
 
 ---
 
+## 🛠️ Technical Stack Breakdown
+
+Kimiko is powered by a robust and modern stack designed for high-performance AI orchestration:
+
+### 1. AI / Machine Learning Core
+*   **onnxruntime**: Efficient machine learning model execution.
+*   **ctranslate2**: High-performance inference engine for transformers.
+*   **tokenizers**: Fast HuggingFace tokenization.
+*   **huggingface-hub**: Model and dataset management.
+*   **numpy**: Numerical computing backbone.
+*   **sympy / mpmath**: Symbolic and high-precision math.
+
+### 2. LLM / Agent Framework
+*   **langgraph**: Core framework for agent workflows.
+*   **langgraph-sdk / utilities**: Workflow state and checkpointing.
+*   **langchain-core**: LLM pipeline utilities.
+*   **langsmith**: Debugging and monitoring.
+
+### 3. Vector Database & Retrieval
+*   **qdrant-client**: Interface for the Qdrant semantic memory layer.
+
+### 4. Backend / API Framework
+*   **fastapi**: Modern async Python API.
+*   **starlette / uvicorn**: ASGI toolkit and server.
+*   **sse-starlette**: Real-time streaming responses.
+*   **httpx**: Async HTTP communication.
+
+### 5. Task Queue / Background Workers
+*   **celery**: Distributed task management.
+*   **redis**: In-memory message broker and caching.
+
+### 6. Database / Persistence
+*   **sqlalchemy**: Database ORM.
+*   **asyncpg**: Async PostgreSQL driver.
+*   **alembic**: Database migrations.
+
+### 7. Authentication & Security
+*   **jose / cryptography**: JWT and secure encryption.
+*   **bcrypt / passlib**: Password hashing.
+
+### 8. Computer Vision / Media
+*   **opencv-python**: Computer vision toolkit (UI detection).
+*   **Pillow / pytesseract**: Image processing and OCR.
+*   **av**: Video processing.
+
+### 9. Speech & Audio AI
+*   **faster-whisper**: High-speed Speech-to-Text.
+*   **piper-tts**: Near-instant Text-to-Speech.
+
+### 10. OS Automation
+*   **pywinauto / uiautomation**: Windows UI and accessibility control.
+*   **python-xlib**: Linux GUI interaction.
+
+### 11. CLI / Developer Tools
+*   **typer / click**: CLI framework for agent interaction.
+*   **rich**: Enhanced terminal visualization.
+
+### 12. Performance & Infrastructure
+*   **uvloop**: Optimized async event loop.
+*   **websockets**: Low-latency communication.
+*   **watchfiles**: Reactive file monitoring.
+
+---
+
+## 🏗️ The Big Picture
+
+```mermaid
+graph TD
+    A[Vision + Speech] --> B[LLM / Agent Layer - LangGraph]
+    B --> C[Memory Layer]
+    C --> D[Redis - Short-term]
+    C --> E[Qdrant - Semantic]
+    C --> F[PostgreSQL - Long-term]
+    B --> G[Automation Layer]
+    G --> H[FastAPI Backend]
+    H --> I[Celery Workers]
+```
+
+---
+
 ## 5. Setup and Running
 
 ### Prerequisites

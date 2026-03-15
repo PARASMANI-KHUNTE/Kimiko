@@ -305,111 +305,109 @@ class RequestOrchestrator:
         """Process a streaming chat request."""
         try:
             request_id = request_id or str(uuid.uuid4())[:8]
-        user_message = request.message
-        session_id = request.session_id or request_id
+            user_message = request.message
+            session_id = request.session_id or request_id
 
-        # ── OS AGENT PATH (Experimental Streaming) ──
-        if request.user_id == OS_USER_ID:
-            import json
-            yield f"data: {json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}\n\n"
-            
-            history = await self.memory.get_conversation(session_id)
-            from langchain_core.messages import HumanMessage, AIMessage
-            lc_history = []
-            for m in history[:-1]:
-                if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
-                else: lc_history.append(AIMessage(content=m.content))
+            # ── OS AGENT PATH (Experimental Streaming) ──
+            if request.user_id == OS_USER_ID:
+                import json
+                yield f"data: {json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}\n\n"
+                
+                history = await self.memory.get_conversation(session_id)
+                from langchain_core.messages import HumanMessage, AIMessage
+                lc_history = []
+                for m in history[:-1]:
+                    if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
+                    else: lc_history.append(AIMessage(content=m.content))
 
-            # Run agent and yield steps as they happen
-            # We wrap the engine's internal step logging or use a callback if available.
-            # For now, we manually iterate or just yield the final trace as 'thinking' steps.
-            response_text, trace = await self.agent_engine.run(
-                goal=user_message,
-                history=lc_history,
-                images=request.images
-            )
-            
-            for step in trace:
-                yield f"data: {json.dumps({'event': 'thought', 'data': step})}\n\n"
-                await asyncio.sleep(0.1)
+                # Run agent and yield steps as they happen
+                response_text, trace = await self.agent_engine.run(
+                    goal=user_message,
+                    history=lc_history,
+                    images=request.images
+                )
+                
+                for step in trace:
+                    yield f"data: {json.dumps({'event': 'thought', 'data': step})}\n\n"
+                    await asyncio.sleep(0.1)
 
+                await self.memory.add_message(
+                    session_id,
+                    Message(role=Role.ASSISTANT, content=response_text),
+                    request_id=request_id,
+                    user_id=request.user_id
+                )
+                yield f"data: {json.dumps({'event': 'token', 'data': response_text})}\n\n"
+                yield f"data: {json.dumps({'event': 'done'})}\n\n"
+                return
+
+            # ── STANDARD CHAT PATH ──
             await self.memory.add_message(
                 session_id,
-                Message(role=Role.ASSISTANT, content=response_text),
+                Message(role=Role.USER, content=user_message),
                 request_id=request_id,
-                user_id=request.user_id
             )
-            yield f"data: {json.dumps({'event': 'token', 'data': response_text})}\n\n"
-            yield f"data: {json.dumps({'event': 'done'})}\n\n"
-            return
 
-        # ── STANDARD CHAT PATH ──
-        await self.memory.add_message(
-            session_id,
-            Message(role=Role.USER, content=user_message),
-            request_id=request_id,
-        )
+            intent_result = self.intent_classifier.classify(user_message)
+            model = await self.model_router.route(
+                intent=intent_result.intent,
+                preferred_model=request.model,
+            )
 
-        intent_result = self.intent_classifier.classify(user_message)
-        model = await self.model_router.route(
-            intent=intent_result.intent,
-            preferred_model=request.model,
-        )
+            is_complex = len(user_message) > 60 or "?" in user_message
+            dynamic_threshold = 0.75 if is_complex else 0.60
 
-        is_complex = len(user_message) > 60 or "?" in user_message
-        dynamic_threshold = 0.75 if is_complex else 0.60
+            retrieval_results = await self.retrieval_engine.retrieve(
+                query=user_message,
+                session_id=session_id,
+                user_id=request.user_id,
+                db=db,
+                top_k=5,
+            )
+            retrieval_results = [
+                r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
+            ]
 
-        retrieval_results = await self.retrieval_engine.retrieve(
-            query=user_message,
-            session_id=session_id,
-            user_id=request.user_id,
-            db=db,
-            top_k=5,
-        )
-        retrieval_results = [
-            r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
-        ]
+            conversation_history = await self.memory.get_conversation(session_id)
+            conversation_summary = await self.memory.get_conversation_summary(session_id)
 
-        conversation_history = await self.memory.get_conversation(session_id)
-        conversation_summary = await self.memory.get_conversation_summary(session_id)
+            prompt_data = self.context_builder.build(
+                user_message=user_message,
+                model=model,
+                conversation_history=conversation_history[:-1],
+                retrieval_results=retrieval_results,
+                conversation_summary=conversation_summary,
+            )
 
-        prompt_data = self.context_builder.build(
-            user_message=user_message,
-            model=model,
-            conversation_history=conversation_history[:-1],
-            retrieval_results=retrieval_results,
-            conversation_summary=conversation_summary,
-        )
+            if request.images:
+                await self.scheduler.schedule_vision(model)
+            else:
+                await self.scheduler.schedule_chat(model)
+                
+            llm = get_llm_service()
+            token_stream = llm.stream(
+                model=model,
+                prompt=prompt_data["prompt"],
+                system=prompt_data["system"],
+                images=prompt_data.get("images"),
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+            )
 
-        if request.images:
-            await self.scheduler.schedule_vision(model)
-        else:
-            await self.scheduler.schedule_chat(model)
-            
-        llm = get_llm_service()
-        token_stream = llm.stream(
-            model=model,
-            prompt=prompt_data["prompt"],
-            system=prompt_data["system"],
-            images=prompt_data.get("images"),
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-        )
+            collected_tokens: list[str] = []
+            async for sse_event in self.streaming_engine.stream_response(
+                token_stream, model, check_disconnected=disconnect_event
+            ):
+                import json
+                try:
+                    data = json.loads(sse_event.replace("data: ", "").strip())
+                    if data.get("event") == "token":
+                        collected_tokens.append(data.get("data", ""))
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                yield sse_event
 
-        collected_tokens: list[str] = []
-        async for sse_event in self.streaming_engine.stream_response(
-            token_stream, model, check_disconnected=disconnect_event
-        ):
-            import json
-            try:
-                data = json.loads(sse_event.replace("data: ", "").strip())
-                if data.get("event") == "token":
-                    collected_tokens.append(data.get("data", ""))
-            except (json.JSONDecodeError, ValueError):
-                pass
-            yield sse_event
-
-        full_response = "".join(collected_tokens)
+            full_response = "".join(collected_tokens)
             if full_response:
                 await self.memory.add_message(
                     session_id,
