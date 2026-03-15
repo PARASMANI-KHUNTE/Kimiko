@@ -9,11 +9,18 @@ class ContextArgs(BaseModel):
     detailed: bool = Field(True, description="Whether to include full OCR and UI element tree.")
 
 class SystemContextTool(BaseTool):
-    name: str = "get_system_context"
-    description: str = "Get the current screen state, including OCR text, active window, and UI elements. Use this to 'see' what is happening on the screen."
-    args_schema: type[BaseModel] = ContextArgs
+    def __init__(self) -> None:
+        super().__init__(
+            name="get_system_context",
+            description="Get the current screen state, including OCR text, active window, and UI elements. Use this to 'see' what is happening on the screen.",
+            capabilities=["os_context"],
+        )
 
-    async def execute(self, detailed: bool = True) -> Dict[str, Any]:
+    @property
+    def args_schema(self) -> type[BaseModel]:
+        return ContextArgs
+
+    async def run(self, detailed: bool = True) -> Dict[str, Any]:
         # Communicate with the Host Bridge on 127.0.0.1:8001
         url = "http://127.0.0.1:8001/context/full" if detailed else "http://127.0.0.1:8001/context"
         

@@ -100,7 +100,10 @@ class AgentEngine:
         # Use new structured generate API
         model_name = state.get("model", "qwen2.5")
         if state.get("images"):
-            model_name = "qwen2-vl"
+            # Check for a specific vision model in settings or default to qwen2.5-vl
+            from kimiko.config import get_settings
+            settings = get_settings()
+            model_name = getattr(settings, "os_vision_model", "qwen2.5-vl")
 
         response = await llm.generate(
             model=model_name,

@@ -113,6 +113,20 @@ graph TD
 
 ---
 
+## 🚀 Quick Start (Complete App)
+
+To start everything (AI Engines, Databases, Backend, and Frontend) in one go:
+
+```powershell
+# 1. Start all containers
+docker-compose up -d --build
+
+# 2. Wait 30 seconds, then start the OS Assistant service
+python -m kimiko.os.assistant
+```
+
+---
+
 ## 5. Setup and Running
 
 ### Prerequisites
@@ -128,20 +142,64 @@ graph TD
 2.  **Configure Environment**:
     - Copy `.env.example` to `.env`.
     - Edit `.env` to set passwords and API keys (if using remote providers).
-3.  **Launch Infrastructure**:
-    ```bash
+### Option 1: The Complete App (Docker - Recommended)
+This starts all services (PostgreSQL, Qdrant, Redis, Ollama, Backend, and Frontend) in a single command.
+
+1.  **Launch Infrastructure**:
+    ```powershell
     docker-compose up -d --build
     ```
-4.  **Prepare Models**:
+2.  **Prepare Models**:
     Pull the required local models into Ollama:
     ```bash
     docker exec -it kimiko-ollama ollama pull qwen2.5
     docker exec -it kimiko-ollama ollama pull qwen2-vl
     docker exec -it kimiko-ollama ollama pull nomic-embed-text
     ```
-5.  **Access the Dashboard**:
+3.  **Access the Dashboard**:
     - **Backend API**: `http://localhost:8000/docs` (Swagger)
-    - **Frontend UI**: `http://localhost:3000` (or as configured)
+    - **Frontend UI**: `http://localhost:3000`
+
+### Option 2: Manual Component Startup (Local Development)
+If you want to run components separately for development:
+
+#### A. Backend API (FastAPI)
+```powershell
+# From the project root
+pip install -e .
+uvicorn kimiko.main:app --reload --port 8000
+```
+
+#### B. Frontend Dashboard (Next.js)
+```powershell
+cd web
+npm install
+npm run dev
+```
+
+#### C. OS Assistant Overlay (Electron)
+To use the Ctrl+Space overlay, you need both the background service and the UI:
+1.  **Terminal 1 (Backend Service)**:
+    ```powershell
+    python -m kimiko.os.assistant
+    ```
+2.  **Terminal 2 (Electron UI)**:
+    ```powershell
+    cd src/kimiko/os/ui-electron
+    npm install
+    npm start
+    ```
+
+#### D. Running the CLI Tool
+To use the `kimiko` command from your terminal, verify it's installed in editable mode:
+```powershell
+# Run once from project root
+pip install -e .
+
+# Then use the tool:
+kimiko status
+kimiko chat
+```
 
 ---
 

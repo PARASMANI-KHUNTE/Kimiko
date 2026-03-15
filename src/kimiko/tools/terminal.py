@@ -10,11 +10,18 @@ class TerminalArgs(BaseModel):
     cwd: Optional[str] = Field(None, description="The directory to run the command in.")
 
 class TerminalTool(BaseTool):
-    name: str = "terminal_run"
-    description: str = "Safely execute terminal commands (git, ls, python, etc.) on the host OS. REQUIRES USER APPROVAL."
-    args_schema: type[BaseModel] = TerminalArgs
+    def __init__(self) -> None:
+        super().__init__(
+            name="terminal_run",
+            description="Safely execute terminal commands (git, ls, python, etc.) on the host OS. REQUIRES USER APPROVAL.",
+            capabilities=["os_terminal"],
+        )
 
-    async def execute(self, command: str, cwd: Optional[str] = None) -> str:
+    @property
+    def args_schema(self) -> type[BaseModel]:
+        return TerminalArgs
+
+    async def run(self, command: str, cwd: Optional[str] = None) -> str:
         # Communicate with the Host Bridge (usually http://host.docker.internal:8001 or 127.0.0.1:8001)
         # Assuming Docker-to-Host networking is set up or we're running locally.
         # Since the assistant is on 127.0.0.1:8001, we use that.

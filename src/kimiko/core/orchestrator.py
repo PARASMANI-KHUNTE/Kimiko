@@ -242,7 +242,18 @@ class RequestOrchestrator:
                     temperature=request.temperature,
                     max_tokens=request.max_tokens,
                 )
-        except LLMServiceError as e:
+        except Exception as e:
+            from kimiko.services.llm import ModelNotAvailableError
+            if isinstance(e, ModelNotAvailableError):
+                logger.error("model_not_found", model=model, error=str(e))
+                return ChatResponse(
+                    id=request_id,
+                    session_id=session_id,
+                    message=Message(role=Role.ASSISTANT, content=f"⚠️ Model '{model}' is not available in Ollama. Please run `ollama pull {model}` to use this feature."),
+                    model=model,
+                    intent=intent_result.intent.value if 'intent_result' in locals() else "UNKNOWN",
+                    usage=TokenUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
+                )
             LLM_ERRORS.labels(model=model, error_type=type(e).__name__).inc()
             logger.error("llm_generation_failed", error=str(e), model=model)
             raise
@@ -292,7 +303,8 @@ class RequestOrchestrator:
         disconnect_event: asyncio.Event | None = None,
     ) -> AsyncIterator[str]:
         """Process a streaming chat request."""
-        request_id = request_id or str(uuid.uuid4())[:8]
+        try:
+            request_id = request_id or str(uuid.uuid4())[:8]
         user_message = request.message
         session_id = request.session_id or request_id
 
@@ -398,9 +410,16 @@ class RequestOrchestrator:
             yield sse_event
 
         full_response = "".join(collected_tokens)
-        if full_response:
-            await self.memory.add_message(
-                session_id,
-                Message(role=Role.ASSISTANT, content=full_response),
-                request_id=request_id,
-            )
+            if full_response:
+                await self.memory.add_message(
+                    session_id,
+                    Message(role=Role.ASSISTANT, content=full_response),
+                    request_id=request_id,
+                )
+        except Exception as e:
+            from kimiko.services.llm import ModelNotAvailableError
+            if isinstance(e, ModelNotAvailableError):
+                import json
+                yield f"data: {json.dumps({'event': 'error', 'data': f'⚠️ Model not found. Please run `ollama pull {str(e).split()[-1]}`'})}\n\n"
+                return
+            raise

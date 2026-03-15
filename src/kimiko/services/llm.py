@@ -101,7 +101,7 @@ class OllamaService(BaseLLMService):
 
     def _is_vision_model(self, model: str) -> bool:
         """Heuristic to check if a model supports vision."""
-        vision_keywords = {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-"}
+        vision_keywords = {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-", "vl", "qwen2-"}
         return any(k in model.lower() for k in vision_keywords)
 
     async def close(self) -> None:

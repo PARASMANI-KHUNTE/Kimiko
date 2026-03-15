@@ -9,12 +9,34 @@ class FileArgs(BaseModel):
     path: str = Field(..., description="The host-level path of the file/directory.")
     content: Optional[str] = Field(None, description="The content to write to the file (for write actions).")
 
-class OSFileSystemTool(BaseTool):
-    name: str = "os_filesystem"
-    description: str = "Perform file operations (read, write, list) on the host OS. REQUIRES USER APPROVAL FOR WRITES."
-    args_schema: type[BaseModel] = FileArgs
+class OSFileSystem:
+    """Utility class for host-level file operations used by the bridge."""
+    @staticmethod
+    def write_file(path: str, content: str) -> bool:
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return True
+        except Exception as e:
+            print(f"Error writing file: {e}")
+            return False
+import os
 
-    async def execute(self, action: str, path: str, content: Optional[str] = None) -> Any:
+class OSFileSystemTool(BaseTool):
+    def __init__(self) -> None:
+        super().__init__(
+            name="os_filesystem",
+            description="Perform file operations (read, write, list) on the host OS. REQUIRES USER APPROVAL FOR WRITES.",
+            capabilities=["os_filesystem"],
+        )
+
+    @property
+    def args_schema(self) -> type[BaseModel]:
+        return FileArgs
+
+    async def run(self, action: str, path: str, content: Optional[str] = None) -> Any:
         # Communicate with the Host Bridge on 127.0.0.1:8001
         base_url = "http://127.0.0.1:8001/files"
         
