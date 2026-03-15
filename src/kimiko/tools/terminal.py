@@ -22,10 +22,9 @@ class TerminalTool(BaseTool):
         return TerminalArgs
 
     async def run(self, command: str, cwd: Optional[str] = None) -> str:
-        # Communicate with the Host Bridge (usually http://host.docker.internal:8001 or 127.0.0.1:8001)
-        # Assuming Docker-to-Host networking is set up or we're running locally.
-        # Since the assistant is on 127.0.0.1:8001, we use that.
-        bridge_url = "http://127.0.0.1:8001/terminal/run"
+        from kimiko.config import get_settings
+        os_bridge_url = get_settings().os_bridge_url
+        bridge_url = f"{os_bridge_url}/terminal/run"
         
         try:
             async with httpx.AsyncClient(timeout=130.0) as client:
@@ -44,11 +43,11 @@ class TerminalTool(BaseTool):
                 import asyncio
                 for _ in range(60):
                     await asyncio.sleep(2)
-                    check_resp = await client.get("http://127.0.0.1:8001/approval/pending")
+                    check_resp = await client.get(f"{os_bridge_url}/approval/pending")
                     pending = check_resp.json().get("pending")
                     if not pending:
                         # Success! Now retrieve the result
-                        result_resp = await client.get(f"http://127.0.0.1:8001/approval/result/{action_id}")
+                        result_resp = await client.get(f"{os_bridge_url}/approval/result/{action_id}")
                         if result_resp.status_code == 200:
                             res = result_resp.json()
                             return f"STDOUT:\n{res.get('stdout')}\nSTDERR:\n{res.get('stderr')}\nExit Code: {res.get('exit_code')}"

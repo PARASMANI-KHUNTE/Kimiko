@@ -80,9 +80,13 @@ class AgentEngine:
             for t in tools
         ])
         
-        system_msg = SystemMessage(
-            content=REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
-        )
+        try:
+            system_content = REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
+        except KeyError as e:
+            logger.error("prompt_formatting_failed_secondary", error=str(e))
+            system_content = REACT_SYSTEM_PROMPT.replace("{tools_description}", tools_description)
+
+        system_msg = SystemMessage(content=system_content)
         
         # Prepare messages for LLM (User and Assistant turns)
         messages = state["messages"]
@@ -99,27 +103,54 @@ class AgentEngine:
         
         # Use new structured generate API
         model_name = state.get("model", "qwen2.5")
-        if state.get("images"):
-            # Check for a specific vision model in settings or default to qwen2.5-vl
+        has_images = bool(state.get("images"))
+        if has_images:
+            # Check for a specific vision model in settings or default to qwen2.5vl
             from kimiko.config import get_settings
             settings = get_settings()
-            model_name = getattr(settings, "os_vision_model", "qwen2.5-vl")
+            model_name = getattr(settings, "os_vision_model", "qwen2.5vl")
 
-        response = await llm.generate(
-            model=model_name,
-            prompt=prompt,
-            system=REACT_SYSTEM_PROMPT.format(tools_description=tools_description),
-            images=state.get("images"),
-            temperature=0.1, # Agents need even lower temperature for tool reliability
-        )
+        try:
+            system_content = REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
+        except KeyError as e:
+            logger.error("prompt_formatting_failed", error=str(e), template=REACT_SYSTEM_PROMPT)
+            # Fallback: simple join if format fails (emergency fix)
+            system_content = REACT_SYSTEM_PROMPT.replace("{tools_description}", tools_description)
+
+        try:
+            response = await llm.generate(
+                model=model_name,
+                prompt=prompt,
+                system=system_content,
+                images=state.get("images"),
+                temperature=0.1, # Agents need even lower temperature for tool reliability
+                stop=["Observation:", "Observation :"]
+            )
+        except Exception:
+            if has_images and model_name != "qwen2.5":
+                # Vision model unavailable (OOM or not found), fall back to text model
+                logger.warning("vision_model_unavailable_fallback", model=model_name)
+                response = await llm.generate(
+                    model="qwen2.5",
+                    prompt=prompt,
+                    system=REACT_SYSTEM_PROMPT.format(tools_description=tools_description),
+                    images=None,  # Drop images for the text model
+                    temperature=0.1,
+                    stop=["Observation:", "Observation :"]
+                )
+            else:
+                raise
+
         
         text = response.get("response", "")
         full_text = "Thought:" + text # Restore prefix deleted for prompt engineering
         
+        logger.debug("agent_raw_output", full_text=full_text)
+        
         # Parse Thought / Action / Final Answer
         thought_match = re.search(r"Thought:(.*?)(?=Action:|Final Answer:|$)", full_text, re.S)
         action_match = re.search(r"Action:\s*(.*)", full_text)
-        action_input_match = re.search(r"Action Input:\s*({.*})", full_text, re.S)
+        action_input_match = re.search(r"Action Input:.*?({.*})", full_text, re.S)
         final_answer_match = re.search(r"Final Answer:\s*(.*)", full_text, re.S)
         
         thought = thought_match.group(1).strip() if thought_match else ""
@@ -131,20 +162,22 @@ class AgentEngine:
             "trace": (state.get("trace") or []) + [f"Thought: {thought}"]
         }
         
-        if final_answer_match:
-            updates["next_step"] = "end"
-            logger.info(
-                "agent_step_trace",
-                step=state["step_count"] + 1,
-                thought=thought,
-                conclusion=final_answer_match.group(1).strip()
-            )
-        elif action_match:
+        # PRIORITIZE ACTION OVER FINAL ANSWER
+        # This prevents hallucinated "Observation: ... Final Answer: ..." blocks from bypassing the actual tool call.
+        if action_match:
             updates["action"] = action_match.group(1).strip()
             # Parse input as JSON
             try:
                 input_str = action_input_match.group(1).strip() if action_input_match else "{}"
-                updates["action_input"] = json.loads(input_str)
+                # Strip markdown blocks if the LLM wrapped the JSON
+                if input_str.startswith("```json"):
+                    input_str = input_str[7:]
+                elif input_str.startswith("```"):
+                    input_str = input_str[3:]
+                if input_str.endswith("```"):
+                    input_str = input_str[:-3]
+                
+                updates["action_input"] = json.loads(input_str.strip())
             except json.JSONDecodeError:
                 updates["action_input"] = {}
             updates["next_step"] = "act"
@@ -155,6 +188,14 @@ class AgentEngine:
                 thought=thought,
                 action=updates["action"],
                 action_input=updates["action_input"]
+            )
+        elif final_answer_match:
+            updates["next_step"] = "end"
+            logger.info(
+                "agent_step_trace",
+                step=state["step_count"] + 1,
+                thought=thought,
+                conclusion=final_answer_match.group(1).strip()
             )
         else:
             # Fallback — maybe it just stopped without Final Answer

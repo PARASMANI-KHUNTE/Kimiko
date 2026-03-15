@@ -37,12 +37,13 @@ class OSFileSystemTool(BaseTool):
         return FileArgs
 
     async def run(self, action: str, path: str, content: Optional[str] = None) -> Any:
-        # Communicate with the Host Bridge on 127.0.0.1:8001
-        base_url = "http://127.0.0.1:8001/files"
+        from kimiko.config import get_settings
+        os_bridge_url = get_settings().os_bridge_url
+        base_url = f"{os_bridge_url}/files"
         
         async with httpx.AsyncClient(timeout=30.0) as client:
             if action == "list":
-                resp = await client.get(f"http://127.0.0.1:8001/files/list", params={"path": path})
+                resp = await client.get(f"{base_url}/list", params={"path": path})
                 if resp.status_code == 200:
                     data = resp.json()
                     items = data.get("items", [])
@@ -50,23 +51,23 @@ class OSFileSystemTool(BaseTool):
                 return f"Error listing directory: {resp.text}"
             
             elif action == "read":
-                resp = await client.get(f"http://127.0.0.1:8001/files/read", params={"path": path})
+                resp = await client.get(f"{base_url}/read", params={"path": path})
                 if resp.status_code == 200:
                     return resp.json().get("content", "")
                 return f"Error reading file: {resp.text}"
             
             elif action == "write":
-                resp = await client.post(f"http://127.0.0.1:8001/files/write", json={"path": path, "content": content})
+                resp = await client.post(f"{base_url}/write", json={"path": path, "content": content})
                 if resp.status_code == 200:
                     action_id = resp.json().get("action_id")
                     # Poll for completion
                     import asyncio
                     for _ in range(60):
                         await asyncio.sleep(2)
-                        check = await client.get("http://127.0.0.1:8001/approval/pending")
+                        check = await client.get(f"{os_bridge_url}/approval/pending")
                         if not check.json().get("pending"):
                             # Check result
-                            res_resp = await client.get(f"http://127.0.0.1:8001/approval/result/{action_id}")
+                            res_resp = await client.get(f"{os_bridge_url}/approval/result/{action_id}")
                             if res_resp.status_code == 200:
                                 return "File write successful." if res_resp.json().get("success") else "File write denied or failed."
                             return f"Action {action_id} completed."

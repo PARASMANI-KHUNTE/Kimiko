@@ -51,6 +51,7 @@ class BaseLLMService(ABC):
         images: list[str] | None = None,
         temperature: float = 0.3,
         max_tokens: int | None = None,
+        stop: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a complete response."""
         ...
@@ -101,7 +102,7 @@ class OllamaService(BaseLLMService):
 
     def _is_vision_model(self, model: str) -> bool:
         """Heuristic to check if a model supports vision."""
-        vision_keywords = {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-", "vl", "qwen2-"}
+        vision_keywords = {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-", "vl", "qwen2-", "qwen2.5"}
         return any(k in model.lower() for k in vision_keywords)
 
     async def close(self) -> None:
@@ -125,6 +126,7 @@ class OllamaService(BaseLLMService):
         images: list[str] | None = None,
         temperature: float = 0.3,
         max_tokens: int | None = None,
+        stop: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a complete (non-streaming) response from Ollama."""
         payload: dict[str, Any] = {
@@ -141,6 +143,8 @@ class OllamaService(BaseLLMService):
             payload["system"] = system
         if max_tokens:
             payload["options"]["num_predict"] = max_tokens
+        if stop:
+            payload["options"]["stop"] = stop
 
         try:
             resp = await self._client.post("/api/generate", json=payload)

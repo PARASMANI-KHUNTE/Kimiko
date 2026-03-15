@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     max_context_tokens: int = 8192
 
     # ── OS Integration (Phase 7) ──
+    os_bridge_url: str = "http://host.docker.internal:8001"
     os_hotkey: str = "ctrl+space"
     os_model: str = "qwen2.5"  # Default, override with vision model in .env if available
     os_screenshot_quality: int = 70

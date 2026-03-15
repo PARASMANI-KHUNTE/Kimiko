@@ -22,13 +22,14 @@ class AppAutomationTool(BaseTool):
         return AutomationArgs
 
     async def run(self, action: str, params: Dict[str, Any]) -> str:
-        # Communicate with the Host Bridge on 127.0.0.1:8001
-        bridge_url = "http://127.0.0.1:8001/automation/run"
+        from kimiko.config import get_settings
+        os_bridge_url = get_settings().os_bridge_url
+        bridge_run_url = f"{os_bridge_url}/automation/run"
         
         try:
             async with httpx.AsyncClient(timeout=130.0) as client:
                 # 1. Propose action
-                resp = await client.post(bridge_url, json={"action": action, "params": params})
+                resp = await client.post(bridge_run_url, json={"action": action, "params": params})
                 if resp.status_code != 200:
                     return f"Error: Host bridge returned {resp.status_code}"
                 
@@ -39,7 +40,7 @@ class AppAutomationTool(BaseTool):
                 import asyncio
                 for _ in range(60):
                     await asyncio.sleep(2)
-                    check_resp = await client.get("http://127.0.0.1:8001/approval/pending")
+                    check_resp = await client.get(f"{get_settings().os_bridge_url}/approval/pending")
                     pending = check_resp.json().get("pending")
                     if not pending:
                         # Once cleared, the action was either executed or denied.

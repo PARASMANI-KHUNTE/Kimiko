@@ -21,8 +21,9 @@ class SystemContextTool(BaseTool):
         return ContextArgs
 
     async def run(self, detailed: bool = True) -> Dict[str, Any]:
-        # Communicate with the Host Bridge on 127.0.0.1:8001
-        url = "http://127.0.0.1:8001/context/full" if detailed else "http://127.0.0.1:8001/context"
+        from kimiko.config import get_settings
+        os_bridge_url = get_settings().os_bridge_url
+        url = f"{os_bridge_url}/context/full" if detailed else f"{os_bridge_url}/context"
         
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
