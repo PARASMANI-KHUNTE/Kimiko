@@ -9,10 +9,17 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import os
 from kimiko.models.database import Base
+from kimiko.config import get_settings
 
 # Alembic Config object
 config = context.config
+
+# Setup dynamic database URL
+settings = get_settings()
+db_url = os.environ.get("KIMIKO_DATABASE_URL", settings.database_url)
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Logging
 if config.config_file_name is not None:
@@ -44,8 +51,13 @@ def do_run_migrations(connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
+    configuration = config.get_section(config.config_ini_section, {})
+    
+    db_url = os.environ.get("KIMIKO_DATABASE_URL", get_settings().database_url)
+    configuration["sqlalchemy.url"] = db_url
+    
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

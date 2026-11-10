@@ -6,6 +6,7 @@ WORKDIR /app
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
@@ -14,10 +15,16 @@ COPY README.md .
 COPY src/ src/
 
 # Install package
-RUN pip install --no-cache-dir --prefix=/install .
+RUN pip install --no-cache-dir --prefix=/install . Pillow
 
 # ── Runtime stage ──
 FROM python:3.11-slim
+
+# Install runtime system dependencies for audio
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsndfile1 \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

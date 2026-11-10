@@ -49,7 +49,27 @@ dependencies = [
 
     # Resilience
     "tenacity>=9.0.0",
+ 
+    # Phase 2: Agents & Tools (Fix #3 review round 3)
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "duckduckgo-search>=6.0.0",
+    "pypdf>=5.0.0",
+    "python-multipart>=0.0.9",
+    "faster-whisper>=1.0.0",
+    "piper-tts>=1.2.0",
+    "soundfile>=0.12.1",
+    "uvloop>=0.19.0; sys_platform != 'win32'",
+    "Pillow>=10.0.0",
+    "psutil>=5.9.0",
+    "pytesseract>=0.3.10",
+    "opencv-python>=4.8.0",
+    "uiautomation>=2.0.0",
+    "pywinauto>=0.6.8",
 ]
+
+[project.scripts]
+kimiko = "kimiko.interface.cli:main"
 
 [project.optional-dependencies]
 dev = [
@@ -66,6 +86,7 @@ packages = ["src/kimiko"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.ruff]

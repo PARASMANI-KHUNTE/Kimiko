@@ -35,7 +35,9 @@ class SemanticMemory:
         user_id: str,
         tags: list[str] | None = None,
         memory_type: str = "general",
+        importance: float = 0.5,
         metadata: dict | None = None,
+        request_id: str | None = None,
     ) -> str:
         """Embed text and store in Qdrant. Returns the point ID."""
         settings = get_settings()
@@ -47,13 +49,21 @@ class SemanticMemory:
 
         # Create point
         point_id = str(uuid.uuid4())
+        base_metadata = metadata or {}
+        event_timestamp = (
+            base_metadata.get("timestamp")
+            or base_metadata.get("created_timestamp")
+            or time.time()
+        )
+
         payload = {
             "user_id": user_id,
             "text": text,
             "tags": tags or [],
             "type": memory_type,
-            "timestamp": int(time.time()),
-            **(metadata or {}),
+            "importance": importance,
+            "timestamp": event_timestamp,
+            **base_metadata,
         }
 
         await qdrant.upsert(
@@ -72,8 +82,76 @@ class SemanticMemory:
             point_id=point_id,
             user_id=user_id,
             memory_type=memory_type,
+            request_id=request_id,
         )
         return point_id
+
+    async def index_many(
+        self,
+        texts: list[str],
+        user_id: str,
+        *,
+        tags: list[str] | None = None,
+        memory_type: str = "general",
+        importance: float = 0.5,
+        metadata: list[dict] | None = None,
+        request_id: str | None = None,
+    ) -> list[str]:
+        """Embed and upsert many texts with one embed call and one upsert.
+
+        Used by document ingestion, where the per-chunk round-trip pattern made
+        large files dramatically slower than necessary.
+        """
+        if not texts:
+            return []
+
+        settings = get_settings()
+        embedding_service = get_embedding_service()
+        qdrant = get_qdrant()
+
+        vectors = await embedding_service.embed_batch(texts)
+        now = time.time()
+
+        points: list[PointStruct] = []
+        point_ids: list[str] = []
+        for i, (text, vector) in enumerate(zip(texts, vectors)):
+            base_metadata = metadata[i] if metadata and i < len(metadata) else {}
+            point_id = str(uuid.uuid4())
+            point_ids.append(point_id)
+            event_timestamp = (
+                base_metadata.get("timestamp")
+                or base_metadata.get("created_timestamp")
+                or now
+            )
+            points.append(
+                PointStruct(
+                    id=point_id,
+                    vector=vector,
+                    payload={
+                        "user_id": user_id,
+                        "text": text,
+                        "tags": tags or [],
+                        "type": memory_type,
+                        "importance": importance,
+                        "timestamp": event_timestamp,
+                        **base_metadata,
+                    },
+                )
+            )
+
+        await qdrant.upsert(
+            collection_name=settings.qdrant_collection,
+            points=points,
+        )
+
+        logger.info(
+            "semantic_memory_batch_indexed",
+            count=len(points),
+            user_id=user_id,
+            memory_type=memory_type,
+            request_id=request_id,
+        )
+        return point_ids
 
     async def search(
         self,
@@ -81,6 +159,7 @@ class SemanticMemory:
         user_id: str | None = None,
         top_k: int = 5,
         score_threshold: float = 0.3,
+        request_id: str | None = None,
     ) -> list[dict]:
         """Semantic search — returns ranked results with scores.
 
@@ -125,7 +204,9 @@ class SemanticMemory:
                     "tags": hit.payload.get("tags", []),
                     "type": hit.payload.get("type", "general"),
                     "timestamp": hit.payload.get("timestamp", 0),
+                    "created_timestamp": hit.payload.get("created_timestamp"),
                     "user_id": hit.payload.get("user_id", ""),
+                    "importance": hit.payload.get("importance", 0.5),
                 },
                 "point_id": hit.id,
             })
@@ -135,6 +216,7 @@ class SemanticMemory:
             query_preview=query[:50],
             results_count=len(formatted),
             top_score=formatted[0]["score"] if formatted else 0,
+            request_id=request_id,
         )
 
         return formatted

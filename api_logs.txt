@@ -1,0 +1,1210 @@
+﻿kimiko-api  | INFO:     Started server process [1]
+kimiko-api  | INFO:     Waiting for application startup.
+kimiko-api  | [2m2026-03-08T11:42:16.984340Z[0m [[32m[1minfo     [0m] [1mkimiko_starting               [0m [36menv[0m=[35mdevelopment[0m [36mversion[0m=[35m0.1.0[0m
+kimiko-api  | [2m2026-03-08T11:42:16.988239Z[0m [[32m[1minfo     [0m] [1mredis_connected               [0m
+kimiko-api  | [2m2026-03-08T11:42:17.002455Z[0m [[32m[1minfo     [0m] [1mpostgres_connected            [0m
+kimiko-api  | [2m2026-03-08T11:42:17.147709Z[0m [[32m[1minfo     [0m] [1mqdrant_connected              [0m
+kimiko-api  | [2m2026-03-08T11:42:17.153317Z[0m [[32m[1minfo     [0m] [1mllm_service_initialized       [0m [36murl[0m=[35mhttp://ollama:11434[0m
+kimiko-api  | [2m2026-03-08T11:42:17.159864Z[0m [[32m[1minfo     [0m] [1membedding_service_initialized [0m [36mmodel[0m=[35mnomic-embed-text[0m
+kimiko-api  | [2m2026-03-08T11:42:17.160025Z[0m [[32m[1minfo     [0m] [1mmetrics_initialized           [0m
+kimiko-api  | [2m2026-03-08T11:42:17.160079Z[0m [[32m[1minfo     [0m] [1mkimiko_ready                  [0m [36mport[0m=[35m8000[0m
+kimiko-api  | INFO:     Application startup complete.
+kimiko-api  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+kimiko-api  | [2m2026-03-08T11:42:19.941241Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mb3caeb11[0m
+kimiko-api  | [2m2026-03-08T11:42:19.948263Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mb3caeb11[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:36462 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:42:24.933595Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mquery[0m=[35m'text=Hello+world'[0m [36mrequest_id[0m=[35mb85319de[0m
+kimiko-api  | [2m2026-03-08T11:42:24.934486Z[0m [[32m[1minfo     [0m] [1msynthesizing_speech           [0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mrequest_id[0m=[35mb85319de[0m [36mtext[0m=[35m'Hello world'[0m
+kimiko-api  | [2m2026-03-08T11:42:24.934684Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.001s[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mrequest_id[0m=[35mb85319de[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     172.18.0.1:55322 - "POST /v1/audio/synthesize?text=Hello+world HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:42:25.235910Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mdfd502a9[0m
+kimiko-api  | [2m2026-03-08T11:42:25.237174Z[0m [[32m[1minfo     [0m] [1mloading_whisper_model         [0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mrequest_id[0m=[35mdfd502a9[0m [36msize[0m=[35mbase[0m
+kimiko-api  | [2m2026-03-08T11:42:59.338557Z[0m [[32m[1minfo     [0m] [1mtranscription_complete        [0m [36mlanguage[0m=[35men[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mprobability[0m=[35m0.5644997358322144[0m [36mrequest_id[0m=[35mdfd502a9[0m
+kimiko-api  | [2m2026-03-08T11:42:59.339385Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m34.103s[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mrequest_id[0m=[35mdfd502a9[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | [2m2026-03-08T11:42:59.339676Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m8cf9dab9[0m
+kimiko-api  | [2m2026-03-08T11:42:59.340573Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m4ce764a3[0m
+kimiko-api  | [2m2026-03-08T11:42:59.348899Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['math'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mcalculator[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8cf9dab9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:42:59.349058Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['file_system'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mread_file[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8cf9dab9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:42:59.349148Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['internet_access'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mweb_search[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8cf9dab9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:42:59.358946Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.018s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m4ce764a3[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | [2m2026-03-08T11:42:59.359430Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'My name is Paras.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8cf9dab9[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:42:59.359724Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.020s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8cf9dab9[0m
+kimiko-api  | INFO:     172.18.0.1:55346 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:42:59.367570Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m5dcde896[0m
+kimiko-api  | [2m2026-03-08T11:42:59.370072Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I love building AI agents.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m5dcde896[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:42:59.370275Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.003s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m5dcde896[0m
+kimiko-api  | INFO:     172.18.0.1:32950 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:42:59.391392Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m2f3e9cb0[0m
+kimiko-api  | [2m2026-03-08T11:42:59.393445Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I live in India.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m2f3e9cb0[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:42:59.393612Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m2f3e9cb0[0m
+kimiko-api  | INFO:     172.18.0.1:32956 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:42:59.399887Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m65727b4c[0m
+kimiko-api  | [2m2026-03-08T11:42:59.401587Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I prefer dark mode in all my apps.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m65727b4c[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:42:59.401744Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m65727b4c[0m
+kimiko-api  | INFO:     172.18.0.1:32962 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:42:59.422860Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m8e403881[0m
+kimiko-api  | [2m2026-03-08T11:42:59.424723Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I hate mushrooms on pizza.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8e403881[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:42:59.424884Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8e403881[0m
+kimiko-api  | INFO:     172.18.0.1:32970 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:43:09.449241Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m8691d8cd[0m
+kimiko-api  | [2m2026-03-08T11:43:09.451977Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'What do you know about me?'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8691d8cd[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970150[0m
+kimiko-api  | [2m2026-03-08T11:43:09.452207Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.003s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m8691d8cd[0m
+kimiko-api  | INFO:     172.18.0.1:40158 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:43:09.905950Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m6c93fef7[0m
+kimiko-api  | [2m2026-03-08T11:43:09.908240Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'What is in this image?'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m6c93fef7[0m [36msession_id[0m=[35mtest-session-p3-1772970189[0m
+kimiko-api  | [2m2026-03-08T11:43:09.908465Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.003s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m6c93fef7[0m
+kimiko-api  | INFO:     172.18.0.1:40160 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:43:26.229261Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mb5aac88a[0m
+kimiko-api  | [2m2026-03-08T11:43:26.238683Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.009s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mb5aac88a[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:33738 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:43:56.856592Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m0c787de9[0m
+kimiko-api  | [2m2026-03-08T11:43:56.864385Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.008s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m0c787de9[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:46406 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:44:27.437030Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m82d6f43e[0m
+kimiko-api  | [2m2026-03-08T11:44:27.444226Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m82d6f43e[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:46128 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:44:58.052726Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m28d000f8[0m
+kimiko-api  | [2m2026-03-08T11:44:58.059399Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m28d000f8[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:43044 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:45:28.660160Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mcf3ad8a6[0m
+kimiko-api  | [2m2026-03-08T11:45:28.667967Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.008s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mcf3ad8a6[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:35628 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:45:59.266146Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m1b78f042[0m
+kimiko-api  | [2m2026-03-08T11:45:59.273352Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m1b78f042[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:49920 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:46:29.848453Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mbb13bee7[0m
+kimiko-api  | [2m2026-03-08T11:46:29.855694Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mbb13bee7[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:54510 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:47:00.485958Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m045df7f3[0m
+kimiko-api  | [2m2026-03-08T11:47:00.492908Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m045df7f3[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:54324 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:47:31.111750Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m0cb7e836[0m
+kimiko-api  | [2m2026-03-08T11:47:31.121671Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.010s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m0cb7e836[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:55356 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:48:01.725059Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mc606be04[0m
+kimiko-api  | [2m2026-03-08T11:48:01.732037Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mc606be04[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:51022 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:48:32.317713Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mf9412e89[0m
+kimiko-api  | [2m2026-03-08T11:48:32.324705Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mf9412e89[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:46778 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | INFO:     Shutting down
+kimiko-api  | INFO:     Waiting for application shutdown.
+kimiko-api  | [2m2026-03-08T11:48:55.969021Z[0m [[32m[1minfo     [0m] [1mkimiko_shutting_down          [0m
+kimiko-api  | [2m2026-03-08T11:48:55.971541Z[0m [[32m[1minfo     [0m] [1mkimiko_stopped                [0m
+kimiko-api  | INFO:     Application shutdown complete.
+kimiko-api  | INFO:     Finished server process [1]
+kimiko-api  | INFO:     Started server process [1]
+kimiko-api  | INFO:     Waiting for application startup.
+kimiko-api  | [2m2026-03-08T11:48:59.459011Z[0m [[32m[1minfo     [0m] [1mkimiko_starting               [0m [36menv[0m=[35mdevelopment[0m [36mversion[0m=[35m0.1.0[0m
+kimiko-api  | [2m2026-03-08T11:48:59.462921Z[0m [[32m[1minfo     [0m] [1mredis_connected               [0m
+kimiko-api  | [2m2026-03-08T11:48:59.474792Z[0m [[32m[1minfo     [0m] [1mpostgres_connected            [0m
+kimiko-api  | [2m2026-03-08T11:48:59.614770Z[0m [[32m[1minfo     [0m] [1mqdrant_connected              [0m
+kimiko-api  | [2m2026-03-08T11:48:59.620033Z[0m [[32m[1minfo     [0m] [1mllm_service_initialized       [0m [36murl[0m=[35mhttp://ollama:11434[0m
+kimiko-api  | [2m2026-03-08T11:48:59.626135Z[0m [[32m[1minfo     [0m] [1membedding_service_initialized [0m [36mmodel[0m=[35mnomic-embed-text[0m
+kimiko-api  | [2m2026-03-08T11:48:59.626271Z[0m [[32m[1minfo     [0m] [1mmetrics_initialized           [0m
+kimiko-api  | [2m2026-03-08T11:48:59.626307Z[0m [[32m[1minfo     [0m] [1mkimiko_ready                  [0m [36mport[0m=[35m8000[0m
+kimiko-api  | INFO:     Application startup complete.
+kimiko-api  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+kimiko-api  | [2m2026-03-08T11:49:02.701381Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mf51e1297[0m
+kimiko-api  | [2m2026-03-08T11:49:02.708936Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35mf51e1297[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:36478 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | INFO:     Shutting down
+kimiko-api  | INFO:     Waiting for application shutdown.
+kimiko-api  | [2m2026-03-08T11:49:20.984567Z[0m [[32m[1minfo     [0m] [1mkimiko_shutting_down          [0m
+kimiko-api  | [2m2026-03-08T11:49:20.987079Z[0m [[32m[1minfo     [0m] [1mkimiko_stopped                [0m
+kimiko-api  | INFO:     Application shutdown complete.
+kimiko-api  | INFO:     Finished server process [1]
+kimiko-api  | INFO:     Started server process [1]
+kimiko-api  | INFO:     Waiting for application startup.
+kimiko-api  | [2m2026-03-08T11:49:24.249384Z[0m [[32m[1minfo     [0m] [1mkimiko_starting               [0m [36menv[0m=[35mdevelopment[0m [36mversion[0m=[35m0.1.0[0m
+kimiko-api  | [2m2026-03-08T11:49:24.252177Z[0m [[32m[1minfo     [0m] [1mredis_connected               [0m
+kimiko-api  | [2m2026-03-08T11:49:24.263916Z[0m [[32m[1minfo     [0m] [1mpostgres_connected            [0m
+kimiko-api  | [2m2026-03-08T11:49:24.408422Z[0m [[32m[1minfo     [0m] [1mqdrant_connected              [0m
+kimiko-api  | [2m2026-03-08T11:49:24.413593Z[0m [[32m[1minfo     [0m] [1mllm_service_initialized       [0m [36murl[0m=[35mhttp://ollama:11434[0m
+kimiko-api  | [2m2026-03-08T11:49:24.420607Z[0m [[32m[1minfo     [0m] [1membedding_service_initialized [0m [36mmodel[0m=[35mnomic-embed-text[0m
+kimiko-api  | [2m2026-03-08T11:49:24.420793Z[0m [[32m[1minfo     [0m] [1mmetrics_initialized           [0m
+kimiko-api  | [2m2026-03-08T11:49:24.420861Z[0m [[32m[1minfo     [0m] [1mkimiko_ready                  [0m [36mport[0m=[35m8000[0m
+kimiko-api  | INFO:     Application startup complete.
+kimiko-api  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+kimiko-api  | [2m2026-03-08T11:49:27.551425Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m3d2fd2b5[0m
+kimiko-api  | [2m2026-03-08T11:49:27.558217Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.007s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m3d2fd2b5[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:48912 - "GET /health HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:49:38.828012Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mquery[0m=[35m'text=Hello+world'[0m [36mrequest_id[0m=[35mfb2bd1bb[0m
+kimiko-api  | [2m2026-03-08T11:49:38.829000Z[0m [[32m[1minfo     [0m] [1msynthesizing_speech           [0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mrequest_id[0m=[35mfb2bd1bb[0m [36mtext[0m=[35m'Hello world'[0m
+kimiko-api  | [2m2026-03-08T11:49:38.829239Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.001s[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/synthesize[0m [36mrequest_id[0m=[35mfb2bd1bb[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     172.18.0.1:35550 - "POST /v1/audio/synthesize?text=Hello+world HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:49:39.121631Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m26f8a96b[0m
+kimiko-api  | [2m2026-03-08T11:49:39.122923Z[0m [[32m[1minfo     [0m] [1mloading_whisper_model         [0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mrequest_id[0m=[35m26f8a96b[0m [36msize[0m=[35mbase[0m
+kimiko-api  | [2m2026-03-08T11:49:40.747335Z[0m [[32m[1minfo     [0m] [1mtranscription_complete        [0m [36mlanguage[0m=[35men[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mprobability[0m=[35m0.5644997358322144[0m [36mrequest_id[0m=[35m26f8a96b[0m
+kimiko-api  | [2m2026-03-08T11:49:40.747745Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m1.626s[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/audio/transcribe[0m [36mrequest_id[0m=[35m26f8a96b[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     172.18.0.1:35556 - "POST /v1/audio/transcribe HTTP/1.1" 200 OK
+kimiko-api  | [2m2026-03-08T11:49:41.048720Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mea7174f9[0m
+kimiko-api  | [2m2026-03-08T11:49:41.052572Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['math'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mcalculator[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mea7174f9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:49:41.052691Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['file_system'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mread_file[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mea7174f9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:49:41.052742Z[0m [[32m[1minfo     [0m] [1mtool_registered               [0m [36mcapabilities[0m=[35m['internet_access'][0m [36mmethod[0m=[35mPOST[0m [36mname[0m=[35mweb_search[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mea7174f9[0m [36mroles[0m=[35m['user', 'admin'][0m
+kimiko-api  | [2m2026-03-08T11:49:41.059207Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'My name is Paras.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mea7174f9[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:41.059634Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.011s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mea7174f9[0m
+kimiko-api  | INFO:     172.18.0.1:35570 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:41.079773Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mddb907a9[0m
+kimiko-api  | [2m2026-03-08T11:49:41.082060Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I love building AI agents.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mddb907a9[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:41.082243Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.003s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mddb907a9[0m
+kimiko-api  | INFO:     172.18.0.1:35580 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:41.110988Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m808f922e[0m
+kimiko-api  | [2m2026-03-08T11:49:41.113181Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I live in India.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m808f922e[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:41.113365Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m808f922e[0m
+kimiko-api  | INFO:     172.18.0.1:35596 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:41.141969Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m79b120c8[0m
+kimiko-api  | [2m2026-03-08T11:49:41.143987Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I prefer dark mode in all my apps.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m79b120c8[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:41.144195Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m79b120c8[0m
+kimiko-api  | INFO:     172.18.0.1:35612 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:41.173697Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35ma9d2da63[0m
+kimiko-api  | [2m2026-03-08T11:49:41.175611Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'I hate mushrooms on pizza.'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35ma9d2da63[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:41.175786Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35ma9d2da63[0m
+kimiko-api  | INFO:     172.18.0.1:35628 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:51.183725Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m5b5ab8fa[0m
+kimiko-api  | [2m2026-03-08T11:49:51.186421Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'What do you know about me?'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m5b5ab8fa[0m [36msession_id[0m=[35mfact-test-test-session-p3-1772970580[0m
+kimiko-api  | [2m2026-03-08T11:49:51.186613Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.003s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35m5b5ab8fa[0m
+kimiko-api  | INFO:     172.18.0.1:47526 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:51.491134Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m172.18.0.1[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35mf52de531[0m
+kimiko-api  | [2m2026-03-08T11:49:51.492958Z[0m [[32m[1minfo     [0m] [1mpipeline_start                [0m [36mmessage_preview[0m=[35m'What is in this image?'[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mf52de531[0m [36msession_id[0m=[35mtest-session-p3-1772970591[0m
+kimiko-api  | [2m2026-03-08T11:49:51.493130Z[0m [[31m[1merror    [0m] [1mrequest_failed                [0m [36mduration[0m=[35m0.002s[0m [36merror[0m=[35m"'str' object has no attribute 'value'"[0m [36mmethod[0m=[35mPOST[0m [36mpath[0m=[35m/v1/chat[0m [36mrequest_id[0m=[35mf52de531[0m
+kimiko-api  | INFO:     172.18.0.1:47540 - "POST /v1/chat HTTP/1.1" 500 Internal Server Error
+kimiko-api  | ERROR:    Exception in ASGI application
+kimiko-api  | Traceback (most recent call last):
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+kimiko-api  |     result = await app(  # type: ignore[func-returns-value]
+kimiko-api  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+kimiko-api  |     return await self.app(scope, receive, send)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1160, in __call__
+kimiko-api  |     await super().__call__(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+kimiko-api  |     await self.app(scope, receive, _send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+kimiko-api  |     with recv_stream, send_stream, collapse_excgroups():
+kimiko-api  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+kimiko-api  |     self.gen.throw(typ, value, traceback)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+kimiko-api  |     response = await self.dispatch_func(request, call_next)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/middleware/logging.py", line 39, in dispatch
+kimiko-api  |     response = await call_next(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+kimiko-api  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+kimiko-api  |     await self.app(scope, receive_or_disconnect, send_no_error)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 87, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+kimiko-api  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+kimiko-api  |     await self.middleware_stack(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+kimiko-api  |     await route.handle(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+kimiko-api  |     await self.app(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 130, in app
+kimiko-api  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+kimiko-api  |     raise exc
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+kimiko-api  |     await app(scope, receive, sender)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 116, in app
+kimiko-api  |     response = await f(request)
+kimiko-api  |                ^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 670, in app
+kimiko-api  |     raw_response = await run_endpoint_function(
+kimiko-api  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+kimiko-api  |     return await dependant.call(**values)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/api/v1/chat.py", line 36, in chat
+kimiko-api  |     return await orchestrator.process(request, db=db, request_id=request_id)
+kimiko-api  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/core/orchestrator.py", line 101, in process
+kimiko-api  |     await self.memory.add_message(
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/manager.py", line 43, in add_message
+kimiko-api  |     await self.short_term.add_message(session_id, message)
+kimiko-api  |   File "/usr/local/lib/python3.11/site-packages/kimiko/memory/short_term.py", line 39, in add_message
+kimiko-api  |     "role": message.role.value,
+kimiko-api  |             ^^^^^^^^^^^^^^^^^^
+kimiko-api  | AttributeError: 'str' object has no attribute 'value'
+kimiko-api  | [2m2026-03-08T11:49:58.143331Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m41bc60e7[0m
+kimiko-api  | [2m2026-03-08T11:49:58.151643Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.008s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m41bc60e7[0m [36mstatus_code[0m=[35m200[0m
+kimiko-api  | INFO:     127.0.0.1:33798 - "GET /health HTTP/1.1" 200 OK

@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 # ── Enums ──
@@ -43,16 +44,20 @@ class StreamEventType(str, Enum):
 class Message(BaseModel):
     role: Role
     content: str
+    images: list[str] | None = None  # Base64 encoded images
     timestamp: datetime | None = None
 
 
 class ChatRequest(BaseModel):
-    messages: list[Message] = Field(..., min_length=1)
-    model: str | None = None
-    stream: bool = False
+    message: str
     session_id: str | None = None
     user_id: str | None = None
-    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    model: str = "qwen2.5"
+    stream: bool = False
+    context_tags: list[str] | None = None
+    images: list[str] | None = None  # Images for current turn
+    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+    top_p: float = Field(default=0.9, ge=0.0, le=1.0)
     max_tokens: int | None = None
 
 
@@ -134,8 +139,58 @@ class IntentResult(BaseModel):
 class RetrievalResult(BaseModel):
     text: str
     score: float
+    importance: float = 0.5
+    confidence: float = 1.0  # Phase 3
     source: str  # "semantic", "long_term", "short_term"
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[str, Any] = {}
+
+
+# ── Agent Task ──
+
+
+class AgentTaskRequest(BaseModel):
+    goal: str = Field(..., min_length=5)
+    images: list[str] | None = None  # Phase 3.5: Multimodal Agent
+    session_id: str | None = None
+    user_id: str | None = None
+    max_steps: int = Field(default=5, ge=1, le=10)
+
+
+class AgentTaskResponse(BaseModel):
+    id: str
+    goal: str
+    answer: str
+    steps: list[str]
+    session_id: str
+
+
+# ── Documents ──
+
+
+class DocumentIngestResponse(BaseModel):
+    status: str
+    document_name: str
+    chunks_indexed: int
+
+
+# ── User Facts ──
+
+
+class UserFactBase(BaseModel):
+    category: str
+    fact: str
+    importance: float = 0.5
+
+
+class UserFactCreate(UserFactBase):
+    user_id: str
+
+
+class UserFactResponse(UserFactBase):
+    id: str
+    confidence_score: float
+    verification_count: int
+    last_seen: datetime
 
 
 # ── Health ──

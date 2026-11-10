@@ -1,0 +1,20 @@
+﻿INFO:     127.0.0.1:35742 - "GET /health HTTP/1.1" 200 OK
+[2m2026-03-15T17:39:16.258316Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:21.260350Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:26.262251Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:31.264383Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:36.266586Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:41.268667Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:44.781197Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m87daa922[0m
+[2m2026-03-15T17:39:44.791214Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.010s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m87daa922[0m [36mstatus_code[0m=[35m200[0m
+INFO:     127.0.0.1:52728 - "GET /health HTTP/1.1" 200 OK
+[2m2026-03-15T17:39:46.270921Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:51.272146Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:39:56.273921Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:40:01.276154Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:40:06.275848Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:40:11.278477Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m
+[2m2026-03-15T17:40:15.488304Z[0m [[32m[1minfo     [0m] [1mrequest_started               [0m [36mclient[0m=[35m127.0.0.1[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mquery[0m=[35mNone[0m [36mrequest_id[0m=[35m17ffeb14[0m
+[2m2026-03-15T17:40:15.501762Z[0m [[32m[1minfo     [0m] [1mrequest_complete              [0m [36mduration[0m=[35m0.013s[0m [36mmethod[0m=[35mGET[0m [36mpath[0m=[35m/health[0m [36mrequest_id[0m=[35m17ffeb14[0m [36mstatus_code[0m=[35m200[0m
+INFO:     127.0.0.1:50174 - "GET /health HTTP/1.1" 200 OK
+[2m2026-03-15T17:40:16.279618Z[0m [[32m[1mdebug    [0m] [1mnvidia_smi_unavailable        [0m [36merror[0m=[35m"[Errno 2] No such file or directory: 'nvidia-smi'"[0m

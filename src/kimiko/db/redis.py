@@ -10,8 +10,10 @@ _redis_pool: aioredis.Redis | None = None
 
 
 async def init_redis() -> aioredis.Redis:
-    """Initialize the Redis connection pool."""
+    """Initialize the Redis connection pool (idempotent)."""
     global _redis_pool
+    if _redis_pool is not None:
+        return _redis_pool
     settings = get_settings()
     _redis_pool = aioredis.from_url(
         settings.redis_url,

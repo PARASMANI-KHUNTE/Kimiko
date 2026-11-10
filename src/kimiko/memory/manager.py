@@ -7,6 +7,7 @@ memory with memory promotion logic (Fix #4 review round 2).
 from __future__ import annotations
 
 import structlog
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.memory.conversation_summarizer import ConversationSummarizer
@@ -32,13 +33,21 @@ class MemoryManager:
 
     # ── Session / Short-Term ──
 
-    async def add_message(self, session_id: str, message: Message) -> None:
+    async def add_message(
+        self, 
+        session_id: str, 
+        message: Message, 
+        request_id: str | None = None,
+        user_id: str | None = None
+    ) -> None:
         """Add a message to the session conversation history."""
-        await self.short_term.add_message(session_id, message)
+        # ``add_message`` returns the new list length, so we can skip the extra
+        # LLEN round-trip the old ``needs_summarization`` call performed.
+        length = await self.short_term.add_message(session_id, message)
 
-        # Check if summarization is needed
-        if await self.short_term.needs_summarization(session_id):
-            await self._trigger_summarization(session_id)
+        from kimiko.config import get_settings
+        if length >= get_settings().conversation_summary_threshold:
+            await self._trigger_summarization(session_id, request_id, user_id)
 
     async def get_conversation(self, session_id: str) -> list[Message]:
         """Get conversation history for a session."""
@@ -58,6 +67,7 @@ class MemoryManager:
         tags: list[str] | None = None,
         memory_type: str = "general",
         importance: float = 0.5,
+        request_id: str | None = None,
     ) -> str:
         """Store a persistent memory, optionally promoting to semantic index.
 
@@ -76,11 +86,22 @@ class MemoryManager:
         # Memory promotion: only index important memories in vector DB
         vector_id = None
         if importance >= PROMOTION_IMPORTANCE_THRESHOLD:
+            created_ts = (
+                memory.created_at.timestamp()
+                if getattr(memory, "created_at", None) is not None
+                else datetime.utcnow().timestamp()
+            )
             vector_id = await self.semantic.index(
                 text=text,
                 user_id=user_id,
                 tags=tags,
                 memory_type=memory_type,
+                importance=importance,
+                metadata={
+                    "created_timestamp": created_ts,
+                    "memory_id": str(memory.id),
+                },
+                request_id=request_id,
             )
             memory.vector_id = vector_id
             await db.flush()
@@ -89,6 +110,7 @@ class MemoryManager:
                 "memory_promoted_to_semantic",
                 memory_id=str(memory.id),
                 importance=importance,
+                request_id=request_id,
             )
 
         return str(memory.id)
@@ -107,11 +129,12 @@ class MemoryManager:
         return [
             {
                 "id": str(m.id),
+                "user_id": str(m.user_id),
                 "text": m.text,
                 "tags": m.tags or [],
                 "memory_type": m.memory_type,
                 "importance": m.importance,
-                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "created_at": m.created_at if m.created_at else datetime.utcnow(),
             }
             for m in memories
         ]
@@ -123,24 +146,89 @@ class MemoryManager:
             await self.semantic.delete(memory.vector_id)
         return await self.long_term.delete(db, memory_id)
 
+    # ── User Activity (Telemetry) ──
+
+    async def record_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        action: str,
+        app_name: str | None = None,
+        file_path: str | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        """Record OS-level user activity."""
+        await self.long_term.record_activity(
+            db, user_id, action, app_name, file_path, metadata
+        )
+
+    async def get_recent_activity(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Get recent user activities."""
+        activities = await self.long_term.get_recent_activity(db, user_id, limit)
+        import json
+        return [
+            {
+                "id": str(a.id),
+                "action": a.action,
+                "app_name": a.app_name,
+                "file_path": a.file_path,
+                "timestamp": a.timestamp,
+                "metadata": json.loads(a.metadata_json) if a.metadata_json else {},
+            }
+            for a in activities
+        ]
+
     # ── Semantic Search ──
 
     async def search(
-        self, query: str, user_id: str | None = None, top_k: int = 5
+        self,
+        query: str,
+        user_id: str | None = None,
+        top_k: int = 5,
+        request_id: str | None = None,
     ) -> list[dict]:
         """Perform semantic search across memories."""
         return await self.semantic.search(
-            query=query, user_id=user_id, top_k=top_k
+            query=query, user_id=user_id, top_k=top_k, request_id=request_id
         )
 
     # ── Internal ──
 
-    async def _trigger_summarization(self, session_id: str) -> None:
-        """Summarize and compress conversation when threshold is exceeded."""
-        messages = await self.short_term.get_messages(session_id)
-        summary = await self.summarizer.summarize(messages)
-        await self.short_term.store_summary(session_id, summary)
-        logger.info("auto_summarization_triggered", session_id=session_id)
+    async def _trigger_summarization(
+        self,
+        session_id: str,
+        request_id: str | None = None,
+        user_id: str | None = None
+    ) -> None:
+        """Queue summarization and fact extraction as background tasks."""
+        try:
+            from kimiko.workers import celery_app
+
+            # 1. Summarization Task
+            celery_app.send_task(
+                "kimiko.summarize_conversation",
+                args=[session_id],
+                kwargs={"request_id": request_id}
+            )
+            logger.info("auto_summarization_queued", session_id=session_id, request_id=request_id)
+
+            # 2. Fact Extraction Task (Phase 3)
+            if user_id:
+                celery_app.send_task(
+                    "kimiko.extract_user_facts",
+                    args=[user_id, session_id],
+                    kwargs={"request_id": request_id}
+                )
+                logger.info("fact_extraction_queued", user_id=user_id, session_id=session_id)
+
+        except Exception:
+            logger.exception("failed_to_queue_background_tasks", session_id=session_id, request_id=request_id)
+
 
     async def clear_session(self, session_id: str) -> None:
         """Clear all session data."""

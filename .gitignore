@@ -46,3 +46,7 @@ htmlcov/
 # Temp
 tmp/
 temp/
+
+# Node
+node_modules/
+dist-electron/

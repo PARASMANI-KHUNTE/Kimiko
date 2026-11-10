@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance,
@@ -15,8 +17,10 @@ _client: AsyncQdrantClient | None = None
 
 
 async def init_qdrant() -> AsyncQdrantClient:
-    """Initialize the Qdrant client and ensure collection exists."""
+    """Initialize the Qdrant client and ensure collection exists (idempotent)."""
     global _client
+    if _client is not None:
+        return _client
     settings = get_settings()
 
     _client = AsyncQdrantClient(url=settings.qdrant_url)
@@ -34,18 +38,22 @@ async def init_qdrant() -> AsyncQdrantClient:
             ),
         )
 
-        # Create payload indexes for efficient filtering
-        for field_name, field_type in [
-            ("user_id", PayloadSchemaType.KEYWORD),
-            ("type", PayloadSchemaType.KEYWORD),
-            ("tags", PayloadSchemaType.KEYWORD),
-            ("timestamp", PayloadSchemaType.INTEGER),
-        ]:
-            await _client.create_payload_index(
-                collection_name=settings.qdrant_collection,
-                field_name=field_name,
-                field_schema=field_type,
-            )
+        # Create payload indexes for efficient filtering (concurrently).
+        await asyncio.gather(
+            *[
+                _client.create_payload_index(
+                    collection_name=settings.qdrant_collection,
+                    field_name=field_name,
+                    field_schema=field_type,
+                )
+                for field_name, field_type in [
+                    ("user_id", PayloadSchemaType.KEYWORD),
+                    ("type", PayloadSchemaType.KEYWORD),
+                    ("tags", PayloadSchemaType.KEYWORD),
+                    ("timestamp", PayloadSchemaType.INTEGER),
+                ]
+            ]
+        )
 
     return _client
 

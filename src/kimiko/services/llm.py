@@ -7,8 +7,10 @@ Uses tenacity for circuit breaker / retry (Fix #5 from review round 2).
 from __future__ import annotations
 
 import asyncio
+import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
+from functools import lru_cache
 from typing import Any
 
 import httpx
@@ -23,6 +25,36 @@ from tenacity import (
 from kimiko.config import get_settings
 
 logger = structlog.get_logger(__name__)
+
+# Substrings that mark a model as accepting image input. Qwen 3.5, Gemma 3/4,
+# MiMo v2.6 and the classic VL/llava families are multimodal.
+_VISION_KEYWORDS = frozenset(
+    {
+        "llava",
+        "vision",
+        "minicpm",
+        "moondream",
+        "bakllava",
+        "multimodal",
+        "v-",
+        "vl",
+        "pixtral",
+        "qwen2-",
+        "qwen2.5",
+        "qwen3.5",
+        "gemma3",
+        "gemma4",
+        "mimo",
+    }
+)
+
+
+@lru_cache(maxsize=256)
+def _is_vision_model_name(model: str) -> bool:
+    """Heuristic to check if a model supports vision (memoized)."""
+    lowered = model.lower()
+    return any(k in lowered for k in _VISION_KEYWORDS)
+
 
 
 class LLMServiceError(Exception):
@@ -47,8 +79,10 @@ class BaseLLMService(ABC):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
+        stop: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a complete response."""
         ...
@@ -60,7 +94,8 @@ class BaseLLMService(ABC):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens one by one."""
@@ -95,6 +130,17 @@ class OllamaService(BaseLLMService):
         )
         # Track warm models
         self._warm_models: set[str] = set()
+        # Cache the (network-backed) model list for a short TTL. Concurrent
+        # refreshes are serialized so we never stampede Ollama.
+        self._models_ttl = get_settings().model_list_cache_ttl
+        self._models_cache: list[dict[str, Any]] | None = None
+        self._models_names: frozenset[str] = frozenset()
+        self._models_cached_at = 0.0
+        self._models_lock = asyncio.Lock()
+
+    def _is_vision_model(self, model: str) -> bool:
+        """Heuristic to check if a model supports vision."""
+        return _is_vision_model_name(model)
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -114,8 +160,10 @@ class OllamaService(BaseLLMService):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
+        stop: list[str] | None = None,
     ) -> dict[str, Any]:
         """Generate a complete (non-streaming) response from Ollama."""
         payload: dict[str, Any] = {
@@ -124,10 +172,16 @@ class OllamaService(BaseLLMService):
             "stream": False,
             "options": {"temperature": temperature},
         }
+        if images and self._is_vision_model(model):
+            payload["images"] = images
+        elif images:
+            logger.warning("omitting_images_for_non_vision_model", model=model)
         if system:
             payload["system"] = system
         if max_tokens:
             payload["options"]["num_predict"] = max_tokens
+        if stop:
+            payload["options"]["stop"] = stop
 
         try:
             resp = await self._client.post("/api/generate", json=payload)
@@ -154,7 +208,8 @@ class OllamaService(BaseLLMService):
         prompt: str,
         *,
         system: str | None = None,
-        temperature: float = 0.7,
+        images: list[str] | None = None,
+        temperature: float = 0.3,
         max_tokens: int | None = None,
     ) -> AsyncIterator[str]:
         """Stream tokens from Ollama. Yields individual token strings."""
@@ -164,6 +219,10 @@ class OllamaService(BaseLLMService):
             "stream": True,
             "options": {"temperature": temperature},
         }
+        if images and self._is_vision_model(model):
+            payload["images"] = images
+        elif images:
+            logger.warning("omitting_images_for_non_vision_model", model=model)
         if system:
             payload["system"] = system
         if max_tokens:
@@ -192,17 +251,77 @@ class OllamaService(BaseLLMService):
 
     # ── Model Management ──
 
+    async def list_models(self, *, force: bool = False) -> list[dict[str, Any]]:
+        """List all models available in Ollama.
+
+        Results are cached for ``model_list_cache_ttl`` seconds and concurrent
+        refreshes are coalesced behind a lock. This method sits on the routing
+        hot path, so avoiding a network round-trip per chat request matters.
+        """
+        now = time.monotonic()
+        if (
+            not force
+            and self._models_cache is not None
+            and (now - self._models_cached_at) < self._models_ttl
+        ):
+            return self._models_cache
+
+        async with self._models_lock:
+            # Another coroutine may have refreshed while we waited.
+            now = time.monotonic()
+            if (
+                not force
+                and self._models_cache is not None
+                and (now - self._models_cached_at) < self._models_ttl
+            ):
+                return self._models_cache
+
+            models = await self._fetch_models()
+            names: set[str] = set()
+            for model in models:
+                name = str(model.get("name", ""))
+                if not name:
+                    continue
+                names.add(name)
+                # Ollama reports "qwen2.5:7b"; callers usually ask for "qwen2.5".
+                names.add(name.split(":", 1)[0])
+            self._models_cache = models
+            self._models_names = frozenset(names)
+            self._models_cached_at = time.monotonic()
+            return models
+
     @retry(
         retry=retry_if_exception_type(httpx.ConnectError),
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=5),
         reraise=True,
     )
-    async def list_models(self) -> list[dict[str, Any]]:
-        """List all models available in Ollama."""
+    async def _fetch_models(self) -> list[dict[str, Any]]:
         resp = await self._client.get("/api/tags")
         resp.raise_for_status()
         return resp.json().get("models", [])
+
+    async def is_available(self, model: str) -> bool:
+        """Return True if ``model`` (or a tagged variant) exists in Ollama.
+
+        Uses the cached model list, so the common case is an O(1) set lookup.
+        """
+        if not model:
+            return False
+        try:
+            await self.list_models()
+        except Exception:
+            return False
+        if model in self._models_names:
+            return True
+        # Allow callers to pass a bare name when only "name:tag" exists.
+        base = model.split(":", 1)[0]
+        return base in self._models_names
+
+    def invalidate_model_cache(self) -> None:
+        """Force the next ``list_models`` call to refresh."""
+        self._models_cache = None
+        self._models_cached_at = 0.0
 
     async def model_info(self, model: str) -> dict[str, Any]:
         """Get detailed info about a model."""
@@ -231,9 +350,10 @@ _llm_service: OllamaService | None = None
 
 
 def init_llm_service(base_url: str | None = None) -> OllamaService:
-    """Initialize the LLM service singleton."""
+    """Initialize the LLM service singleton (idempotent)."""
     global _llm_service
-    _llm_service = OllamaService(base_url=base_url)
+    if _llm_service is None:
+        _llm_service = OllamaService(base_url=base_url)
     return _llm_service
 
 

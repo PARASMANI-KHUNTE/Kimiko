@@ -47,6 +47,22 @@ MODEL_BUDGETS: dict[str, dict[str, int]] = {
         "retrieval": 2000,
         "response": 4000,
     },
+    "qwen2-vl": {
+        "context_window": 16384,
+        "system": 400,  # Default from DEFAULT_BUDGET
+        "history": 4000,
+        "memories": 500,  # Default from DEFAULT_BUDGET
+        "retrieval": 2000,
+        "response": 2000, # Mapped from 'output'
+    },
+    "llava": {
+        "context_window": 4096,
+        "system": 400,  # Default from DEFAULT_BUDGET
+        "history": 1000,
+        "memories": 500,  # Default from DEFAULT_BUDGET
+        "retrieval": 1000,
+        "response": 1000, # Mapped from 'output'
+    },
 }
 
 # Default budget for unknown models
@@ -68,6 +84,7 @@ class TokenManager:
     """
 
     CHARS_PER_TOKEN = 4  # Conservative estimate
+    IMAGE_TOKEN_ESTIMATE = 1000  # Vision models typically use ~1k tokens per image
 
     def __init__(self) -> None:
         self._budgets = MODEL_BUDGETS
@@ -80,16 +97,23 @@ class TokenManager:
         return len(text) // self.CHARS_PER_TOKEN + 1
 
     def count_messages_tokens(self, messages: list[Message]) -> int:
-        """Count total tokens across a list of messages."""
+        """Count total tokens across a list of messages including images."""
         total = 0
         for msg in messages:
             # ~4 tokens overhead per message for role + formatting
             total += self.count_tokens(msg.content) + 4
+            if msg.images:
+                total += len(msg.images) * self.IMAGE_TOKEN_ESTIMATE
         return total
 
     def get_budget(self, model: str) -> dict[str, int]:
         """Get the token budget for a specific model."""
-        # Match by prefix (e.g., "qwen2.5:7b" matches "qwen2.5")
+        # Exact base-name match first (e.g. "qwen2.5:7b" → "qwen2.5").
+        base = model.split(":", 1)[0]
+        budget = self._budgets.get(base)
+        if budget is not None:
+            return budget.copy()
+        # Then fall back to prefix matching for unusual tags.
         for model_key, budget in self._budgets.items():
             if model.startswith(model_key):
                 return budget.copy()
@@ -107,16 +131,19 @@ class TokenManager:
             return []
 
         # Always keep the last message
-        result = [messages[-1]]
+        kept_reversed = [messages[-1]]
         remaining = max_tokens - self.count_tokens(messages[-1].content) - 4
 
-        # Add older messages from most recent backwards
+        # Walk backwards collecting the newest messages that fit. Appending and
+        # reversing at the end is O(n); the old ``insert(0, ...)`` was O(n²).
         for msg in reversed(messages[:-1]):
             msg_tokens = self.count_tokens(msg.content) + 4
             if remaining - msg_tokens < 0:
                 break
-            result.insert(0, msg)
+            kept_reversed.append(msg)
             remaining -= msg_tokens
+
+        result = kept_reversed[::-1]
 
         if len(result) < len(messages):
             logger.info(
@@ -135,20 +162,56 @@ class TokenManager:
             return text
         return text[:max_chars] + "..."
 
-    def allocate_budget(self, model: str) -> dict[str, int]:
-        """Get the full budget allocation for a model, ensuring total fits window."""
+    def allocate_budget(
+        self,
+        model: str,
+        knowledge_tokens: int = 0,
+        image_count: int = 0
+    ) -> dict[str, int]:
+        """Get the full budget allocation for a model, ensuring total fits window.
+        
+        Implements Dynamic Budgeting:
+        - History budget scales inversely with Image tokens (ratio-based sizing).
+        """
         budget = self.get_budget(model)
         window = budget.pop("context_window")
+ 
+        # Account for images if any
+        image_tokens = image_count * self.IMAGE_TOKEN_ESTIMATE
+        
+        # Dynamic Scaling: Shrink history budget based on image token ratio
+        if image_tokens > 0:
+            base_history = budget.get("history", 1500)
+            # Prevent negative ratio if images exceed context window (clamped)
+            ratio = max(0.1, 1.0 - (image_tokens / window))
+            budget["history"] = int(base_history * ratio)
+            
+            # Reduce retrieval slightly as well if image load is massive
+            if image_tokens > (window * 0.3):
+                base_retrieval = budget.get("retrieval", 1000)
+                budget["retrieval"] = int(base_retrieval * ratio)
 
-        # Ensure allocations don't exceed window
-        total_allocated = sum(budget.values())
+        # Ensure allocations don't exceed remaining window
+        total_allocated = sum(budget.values()) + image_tokens
         if total_allocated > window:
-            scale = window / total_allocated
-            budget = {k: int(v * scale) for k, v in budget.items()}
+            # Scale down non-system components if we are still overflowing
+            reserved = budget.get("system", 400) + image_tokens
+            if reserved < window:
+                scale = (window - reserved) / max(1, total_allocated - reserved)
+                for k in budget:
+                    if k != "system":
+                        budget[k] = max(100, int(budget[k] * scale))
+            else:
+                # If images alone exceed window, we have bigger problems, just slash everything
+                for k in budget:
+                    if k != "system":
+                        budget[k] = 100
+                        
             logger.warning(
                 "budget_scaled_down",
                 model=model,
                 window=window,
+                image_tokens=image_tokens,
                 original_total=total_allocated,
             )
 

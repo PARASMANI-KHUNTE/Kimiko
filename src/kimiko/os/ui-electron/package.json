@@ -1,0 +1,12 @@
+{
+    "name": "kimiko-os-ui",
+    "version": "1.0.0",
+    "description": "Premium Glassmorphism OS Overlay for Kimiko AI",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "dependencies": {
+        "electron": "^33.0.0"
+    }
+}

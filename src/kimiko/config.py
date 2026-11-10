@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from functools import lru_cache
-from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     DEVELOPMENT = "development"
     PRODUCTION = "production"
 
@@ -33,11 +32,27 @@ class Settings(BaseSettings):
     api_port: int = 8000
     api_secret_key: str = "change-me-in-production"
     api_debug: bool = False
+    debug_prompt: bool = False
 
     # ── Ollama ──
     ollama_base_url: str = "http://localhost:11434"
     default_model: str = "qwen2.5"
     embedding_model: str = "nomic-embed-text"
+
+    # ── Performance / caching ──
+    # The Ollama model list is cheap but hits the network; cache it briefly.
+    model_list_cache_ttl: float = 30.0
+    # Query embeddings are deterministic, so repeated queries can be reused.
+    embedding_cache_size: int = 512
+    embedding_cache_ttl: float = 600.0
+    # A second LLM call to verify grounding roughly doubles answer latency.
+    # Off by default; enable for maximum factuality at the cost of speed.
+    verify_grounding: bool = False
+    # Echoing every SQL statement is very expensive and noisy; opt-in only.
+    db_echo: bool = False
+    # Create missing tables at startup and seed the local default user. Dev
+    # convenience for an empty database; set false when Alembic owns the schema.
+    auto_create_schema: bool = True
 
     # ── Redis ──
     redis_url: str = "redis://localhost:6379/0"
@@ -58,9 +73,18 @@ class Settings(BaseSettings):
 
     # ── Rate Limiting ──
     rate_limit_rpm: int = 60
+    rate_limit_agent_steps_per_hour: int = 200
+    rate_limit_max_tokens_per_request: int = 16384
 
     # ── Token Budgets ──
     max_context_tokens: int = 8192
+
+    # ── OS Integration (Phase 7) ──
+    os_bridge_url: str = "http://host.docker.internal:8001"
+    os_hotkey: str = "ctrl+space"
+    os_model: str = "qwen2.5"  # Default, override with vision model in .env if available
+    os_screenshot_quality: int = 70
+    os_screenshot_width: int = 1024
 
     @property
     def is_development(self) -> bool:

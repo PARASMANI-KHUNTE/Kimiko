@@ -1,0 +1,16 @@
+﻿docker : invalid value for 
+"since": failed to parse value as 
+time or duration: "17:38:00"
+At line:1 char:1
++ docker logs kimiko-api --since 
+17:38:00 --until 17:40:00 2>&1 | 
+Out-F ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : Not 
+   Specified: (invalid value f..  
+  .ion: "17:38:00":String) [],    
+ RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
