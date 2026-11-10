@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from functools import lru_cache
-from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     DEVELOPMENT = "development"
     PRODUCTION = "production"
 
@@ -51,6 +50,9 @@ class Settings(BaseSettings):
     verify_grounding: bool = False
     # Echoing every SQL statement is very expensive and noisy; opt-in only.
     db_echo: bool = False
+    # Create missing tables at startup and seed the local default user. Dev
+    # convenience for an empty database; set false when Alembic owns the schema.
+    auto_create_schema: bool = True
 
     # ── Redis ──
     redis_url: str = "redis://localhost:6379/0"

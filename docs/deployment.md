@@ -44,6 +44,48 @@ docker-compose up -d --build
 
 ---
 
+## 🗄️ Database Bootstrap
+
+On startup the API creates any missing tables (`Base.metadata.create_all`, which
+is a no-op once the schema exists) and seeds a local default user:
+
+| Field | Value |
+| --- | --- |
+| username | `default` |
+| id | `11111111-1111-1111-1111-111111111111` |
+
+This makes `GET /v1/memory/facts?user_id=default` work on a brand-new database
+and attributes anonymous web/CLI chats to a real `users` row. It is controlled
+by `KIMIKO_AUTO_CREATE_SCHEMA` (default `true`); set it to `false` once Alembic
+migrations own the schema in production.
+
+---
+
+## 🖥️ Web Dashboard
+
+The Next.js dashboard in `web/` talks to the API through server-side rewrites:
+
+| Frontend path | Backend path |
+| --- | --- |
+| `/health` | `/health` |
+| `/api/metrics` | `/metrics` (Prometheus) |
+| `/v1/:path*` | `/v1/:path*` |
+
+The backend origin defaults to `http://localhost:8000` and can be overridden
+with `KIMIKO_API_URL` (for example `KIMIKO_API_URL=http://192.168.1.10:8000`).
+
+```bash
+cd web
+npm install
+npm run build && npm start     # production
+# or: npm run dev              # development, hot reload
+```
+
+Note: `/metrics` in the browser is the dashboard page, which is why the
+Prometheus scrape endpoint is proxied at `/api/metrics` instead.
+
+---
+
 ## 🔄 Model Initialization
 
 After the first boot, you must pull the required models into Ollama:

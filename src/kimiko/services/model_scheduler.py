@@ -31,12 +31,45 @@ class ModelScheduler:
         }
 
     async def _configure_keep_alive(self, model_name: str, keep_alive: str) -> None:
-        """Sends a dummy completion to Ollama solely to trigger the keep_alive timer."""
+        """Validates and configures model with proper warm-up before setting keep_alive."""
+        
+        # Step 1: Verify model exists in Ollama before attempting to use it
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            try:
+                resp = await client.post("/api/tags", params={"name": model_name})
+                if resp.status_code == 200:
+                    data = resp.json()
+                    models = data.get("models", [])
+                    model_exists = any(m.get("name") == model_name for m in models)
+                else:
+                    model_exists = False
+            except Exception as e:
+                logger.error(
+                    "failed_to_check_model_existence",
+                    model=model_name,
+                    error=str(e)
+                )
+                return
+        
+        if not model_exists:
+            logger.warning(
+                "model_not_found_in_ollama",
+                model=model_name,
+                message=f"Model '{model_name}' not found. Run: ollama pull {model_name}"
+            )
+            # Raise a specific exception instead of silently failing
+            raise RuntimeError(
+                f"Model '{model_name}' is not available in Ollama. "
+                f"Please run `ollama pull {model_name}` first."
+            )
+        
+        # Step 2: Schedule keep_alive with a minimal prompt to ensure warm state
         payload = {
             "model": model_name,
-            "prompt": "",
+            "prompt": "test",  # Minimal prompt triggers warm state properly
             "keep_alive": keep_alive
         }
+        
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 res = await client.post(self.api_url, json=payload)

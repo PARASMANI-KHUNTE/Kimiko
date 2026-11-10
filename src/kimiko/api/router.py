@@ -5,13 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter
-from fastapi.staticfiles import StaticFiles
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from starlette.responses import FileResponse, Response
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from starlette.responses import Response
 
-from kimiko.api.v1 import agent, audio, chat, documents, memory, models
-from kimiko.models.schemas import HealthResponse
 from kimiko import __version__
+from kimiko.api.v1 import agent, audio, chat, documents, memory, models, plugins
+from kimiko.models.schemas import HealthResponse
 
 # ── Dashboard path ──
 DASHBOARD_DIR = Path(__file__).resolve().parent.parent / "interface" / "dashboard"
@@ -24,6 +23,7 @@ v1_router.include_router(models.router)
 v1_router.include_router(agent.router)
 v1_router.include_router(documents.router)
 v1_router.include_router(audio.router)
+v1_router.include_router(plugins.router)
 
 # ── Root Router ──
 root_router = APIRouter()

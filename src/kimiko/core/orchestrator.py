@@ -26,10 +26,9 @@ from kimiko.core.observability import LLM_ERRORS, LLM_GENERATION_DURATION
 from kimiko.core.retrieval_engine import RetrievalEngine
 from kimiko.core.streaming import StreamingEngine
 from kimiko.core.token_manager import TokenManager
+from kimiko.db.bootstrap import resolve_user_id
 from kimiko.memory.document_engine import DocumentEngine
 from kimiko.memory.manager import MemoryManager
-from kimiko.plugins.manager import PluginManager
-from kimiko.services.vision_engine import VisionEngine
 from kimiko.models.schemas import (
     ChatRequest,
     ChatResponse,
@@ -38,16 +37,18 @@ from kimiko.models.schemas import (
     Role,
     TokenUsage,
 )
+from kimiko.plugins.manager import PluginManager
 from kimiko.services.llm import get_llm_service
 from kimiko.services.model_scheduler import ModelScheduler
+from kimiko.services.vision_engine import VisionEngine
+from kimiko.tools.automation import AppAutomationTool
 from kimiko.tools.core import CalculatorTool, FileSystemTool
+from kimiko.tools.datetime_tool import DateTimeTool
+from kimiko.tools.os_filesystem import OSFileSystemTool
 from kimiko.tools.registry import ToolRegistry
 from kimiko.tools.search import WebSearchTool
-from kimiko.tools.datetime_tool import DateTimeTool
-from kimiko.tools.terminal import TerminalTool
-from kimiko.tools.os_filesystem import OSFileSystemTool
 from kimiko.tools.system_context import SystemContextTool
-from kimiko.tools.automation import AppAutomationTool
+from kimiko.tools.terminal import TerminalTool
 
 # OS Agent Identity
 OS_USER_ID = "00000000-0000-0000-0000-000000000001"
@@ -69,10 +70,10 @@ class RequestOrchestrator:
         self.retrieval_engine = RetrievalEngine(self.memory)
         self.model_router = ModelRouter()
         self.streaming_engine = StreamingEngine()
-        
+
         # New Phase 2 Engines (Fix #1 review round 3)
         self.document_engine = DocumentEngine(self.memory.semantic)
-        
+
         self.tool_registry = ToolRegistry()
         self.tool_registry.register(CalculatorTool())
         self.tool_registry.register(FileSystemTool(allowed_paths=["./"]))
@@ -82,15 +83,15 @@ class RequestOrchestrator:
         self.tool_registry.register(OSFileSystemTool())
         self.tool_registry.register(SystemContextTool())
         self.tool_registry.register(AppAutomationTool())
-        
+
         # Load external plugins dynammically from src/kimiko/plugins/installed/
         self.plugin_manager = PluginManager(self.tool_registry)
         loaded_plugins = self.plugin_manager.load_plugins()
         logger.info("plugins_loaded", count=loaded_plugins)
-        
+
         self.agent_engine = AgentEngine(self.tool_registry)
         self.vision_engine = VisionEngine()
-        
+
         self.scheduler = ModelScheduler()
 
     async def _validate_citations(self, response: str, results: list[Any]) -> str:
@@ -183,6 +184,10 @@ class RequestOrchestrator:
         user_message = request.message
         session_id = request.session_id or request_id
 
+        # Attribute anonymous web/CLI requests to the seeded local user so
+        # memories and extracted facts land in a real ``users`` row.
+        request.user_id = resolve_user_id(request.user_id)
+
         # ── OS AGENT PATH ──
         if request.user_id == OS_USER_ID:
             logger.info("routing_to_agent_engine", session_id=session_id)
@@ -193,7 +198,7 @@ class RequestOrchestrator:
                 user_id=request.user_id
             )
             history = await self.memory.get_conversation(session_id)
-            from langchain_core.messages import HumanMessage, AIMessage
+            from langchain_core.messages import AIMessage, HumanMessage
             lc_history = []
             for m in history[:-1]:
                 if m.role == Role.USER:
@@ -289,7 +294,13 @@ class RequestOrchestrator:
                 return ChatResponse(
                     id=request_id,
                     session_id=session_id,
-                    message=Message(role=Role.ASSISTANT, content=f"⚠️ Model '{model}' is not available in Ollama. Please run `ollama pull {model}` to use this feature."),
+                    message=Message(
+                        role=Role.ASSISTANT,
+                        content=(
+                            f"⚠️ Model '{model}' is not available in Ollama. "
+                            f"Please run `ollama pull {model}` to use this feature."
+                        ),
+                    ),
                     model=model,
                     intent=intent_result.intent.value if 'intent_result' in locals() else "UNKNOWN",
                     usage=TokenUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
@@ -321,9 +332,14 @@ class RequestOrchestrator:
                 )
             # Opt-in strict verification; off by default because it doubles latency.
             if get_settings().verify_grounding:
-                is_supported = await self._verify_grounding(validated_content, retrieval_results, model)
+                is_supported = await self._verify_grounding(
+                    validated_content, retrieval_results, model
+                )
                 if not is_supported:
-                    final_text = "I do not have enough verified information in my memory to answer this question accurately."
+                    final_text = (
+                        "I do not have enough verified information in my memory "
+                        "to answer this question accurately."
+                    )
 
         # Persist the final answer (after citation cleanup / grounding), not the draft.
         await self.memory.add_message(
@@ -359,9 +375,16 @@ class RequestOrchestrator:
             user_message = request.message
             session_id = request.session_id or request_id
 
+            # Keep streaming attribution consistent with the non-streaming path.
+            request.user_id = resolve_user_id(request.user_id)
+
             # ── OS AGENT PATH (Experimental Streaming) ──
             if request.user_id == OS_USER_ID:
-                yield {"data": json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}
+                yield {
+                    "data": json.dumps(
+                        {"event": "thought", "data": "Thinking about your request..."}
+                    )
+                }
 
                 # Persist the user turn before loading history (matches the
                 # non-streaming path and keeps history ordering correct).
@@ -372,7 +395,7 @@ class RequestOrchestrator:
                     user_id=request.user_id,
                 )
                 history = await self.memory.get_conversation(session_id)
-                from langchain_core.messages import HumanMessage, AIMessage
+                from langchain_core.messages import AIMessage, HumanMessage
                 lc_history = []
                 for m in history[:-1]:
                     if m.role == Role.USER:
@@ -386,7 +409,7 @@ class RequestOrchestrator:
                     history=lc_history,
                     images=request.images
                 )
-                
+
                 for step in trace:
                     yield {"data": json.dumps({'event': 'thought', 'data': step})}
 
@@ -448,7 +471,7 @@ class RequestOrchestrator:
                 await self.scheduler.schedule_vision(model)
             else:
                 await self.scheduler.schedule_chat(model)
-                
+
             llm = get_llm_service()
             token_stream = llm.stream(
                 model=model,
@@ -484,6 +507,16 @@ class RequestOrchestrator:
         except Exception as e:
             from kimiko.services.llm import ModelNotAvailableError
             if isinstance(e, ModelNotAvailableError):
-                yield {"data": json.dumps({'event': 'error', 'data': f'⚠️ Model not found. Please run `ollama pull {str(e).split()[-1]}`'})}
+                yield {
+                    "data": json.dumps(
+                        {
+                            "event": "error",
+                            "data": (
+                                "⚠️ Model not found. Please run "
+                                f"`ollama pull {str(e).split()[-1]}`"
+                            ),
+                        }
+                    )
+                }
                 return
             raise

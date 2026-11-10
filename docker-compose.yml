@@ -134,6 +134,10 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    # The image healthcheck probes the HTTP API, which a Celery worker does not
+    # serve. Without this the worker reports "unhealthy" forever.
+    healthcheck:
+      disable: true
     networks:
       - kimiko-net
     restart: unless-stopped
