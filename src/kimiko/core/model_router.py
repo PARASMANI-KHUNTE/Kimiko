@@ -13,26 +13,39 @@ from kimiko.services.llm import get_llm_service
 
 logger = structlog.get_logger(__name__)
 
+# Primary local model. Qwen 3.5 4B is natively multimodal (text + images),
+# supports tool calls and optional thinking, and needs only ~3.3 GB on disk —
+# it fits a 6 GB laptop GPU with room left for the KV cache.
+#
+# One model serves every intent on purpose: Ollama keeps a single model
+# resident, so routing between models evicts the warm one and pays a cold-start
+# penalty on each switch. A single resident model keeps latency predictable.
+PRIMARY_MODEL = "qwen3.5:4b"
+
 # Default intent → model mapping
 INTENT_MODEL_MAP: dict[Intent, str] = {
-    Intent.CHAT: "qwen2.5",
-    Intent.QUESTION: "qwen2.5",
-    Intent.GREETING: "qwen2.5",
-    Intent.CODE: "deepseek-r1:7b",
-    Intent.IMAGE_ANALYSIS: "qwen2-vl",
-    Intent.DOCUMENT_QUERY: "qwen2.5",
-    Intent.AGENT_TASK: "qwen2.5",
-    Intent.TOOL_REQUEST: "qwen2.5",
-    Intent.SPEECH: "qwen2.5",
+    Intent.CHAT: PRIMARY_MODEL,
+    Intent.QUESTION: PRIMARY_MODEL,
+    Intent.GREETING: PRIMARY_MODEL,
+    Intent.CODE: PRIMARY_MODEL,
+    Intent.IMAGE_ANALYSIS: PRIMARY_MODEL,
+    Intent.DOCUMENT_QUERY: PRIMARY_MODEL,
+    Intent.AGENT_TASK: PRIMARY_MODEL,
+    Intent.TOOL_REQUEST: PRIMARY_MODEL,
+    Intent.SPEECH: PRIMARY_MODEL,
 }
 
-# All models available for user selection (must be pulled in Ollama)
+# Curated models offered in the UI. Entries may not be pulled yet; the catalog
+# endpoint reports an ``available`` flag per model and the router falls back to
+# ``settings.default_model`` when one is missing.
 AVAILABLE_MODELS = [
-    {"id": "qwen2.5",         "name": "Qwen 2.5",        "type": "chat"},
-    {"id": "deepseek-r1:7b",  "name": "DeepSeek R1 7B",  "type": "reasoning"},
-    {"id": "codellama",       "name": "CodeLlama",        "type": "code"},
-    {"id": "llama3.2",        "name": "Llama 3.2",        "type": "chat"},
-    {"id": "qwen2-vl",        "name": "Qwen 2 VL",        "type": "vision"},
+    {"id": "qwen3.5:4b",          "name": "Qwen 3.5 4B",        "type": "chat"},
+    {"id": "qwen3.5:9b",          "name": "Qwen 3.5 9B",        "type": "reasoning"},
+    {"id": "qwen2.5-coder:3b",    "name": "Qwen 2.5 Coder 3B",  "type": "code"},
+    {"id": "mimo-v2.6:9b",        "name": "MiMo v2.6 9B",       "type": "code"},
+    {"id": "llama3.2",            "name": "Llama 3.2",          "type": "chat"},
+    {"id": "embeddinggemma-2:270m", "name": "EmbeddingGemma 2", "type": "embedding"},
+    {"id": "nomic-embed-text",    "name": "Nomic Embed Text",   "type": "embedding"},
 ]
 
 # Intents that MUST stay local for privacy (memory, identity, personal data)

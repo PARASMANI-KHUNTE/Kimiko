@@ -5,7 +5,6 @@ from __future__ import annotations
 from kimiko.config import Settings
 from kimiko.models.schemas import (
     ChatRequest,
-    ChatResponse,
     Intent,
     IntentResult,
     MemoryCreate,
@@ -68,8 +67,8 @@ class TestConfig:
     def test_default_settings(self):
         settings = Settings()
         assert settings.api_port == 8000
-        assert settings.default_model == "qwen2.5"
-        assert settings.embedding_model == "nomic-embed-text"
+        assert settings.default_model == "qwen3.5:4b"
+        assert settings.embedding_model == "embeddinggemma-2:270m"
         assert settings.vector_size == 768
 
     def test_development_check(self):

@@ -223,18 +223,26 @@ graph TD
     - Copy `.env.example` to `.env`.
     - Edit `.env` to set passwords and API keys (if using remote providers).
 ### Option 1: The Complete App (Docker - Recommended)
-This starts all services (PostgreSQL, Qdrant, Redis, Ollama, Backend, and Frontend) in a single command.
+This starts the API, worker, PostgreSQL, Qdrant, and Redis in a single command.
+Kimiko uses the Ollama installation on your host by default, so GPU support works
+out of the box.
 
 1.  **Launch Infrastructure**:
     ```powershell
     docker-compose up -d --build
     ```
-2.  **Prepare Models**:
-    Pull the required local models into Ollama:
+2.  **Prepare Models** (run on the host):
     ```bash
-    docker exec -it kimiko-ollama ollama pull qwen2.5
-    docker exec -it kimiko-ollama ollama pull qwen2-vl
-    docker exec -it kimiko-ollama ollama pull nomic-embed-text
+    ollama pull qwen3.5:4b
+    ollama pull embeddinggemma-2:270m
+    ```
+    `qwen3.5:4b` handles chat, reasoning, code, tools, and images; the 270M
+    embedding model provides 768-d vectors for memory search.
+
+    To run Ollama inside Docker instead, enable the profile and set
+    `KIMIKO_DOCKER_OLLAMA_BASE_URL=http://ollama:11434`:
+    ```powershell
+    docker compose --profile docker-ollama up -d
     ```
 3.  **Access the Dashboard**:
     - **Backend API**: `http://localhost:8000/docs` (Swagger)

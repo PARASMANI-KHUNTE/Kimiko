@@ -1,7 +1,7 @@
 """Semantic memory — Qdrant vector store with proper schema and payload indexes.
 
 Collection: memories
-Vector size: 768 (nomic-embed-text)
+Vector size: 768 (EmbeddingGemma 2 / nomic-embed-text)
 Payload indexes: user_id, type, tags, timestamp
 """
 

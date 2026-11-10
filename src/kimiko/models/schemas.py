@@ -5,10 +5,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from enum import Enum
-
-from pydantic import BaseModel, Field
 from typing import Any
 
+from pydantic import BaseModel, Field
 
 # ── Enums ──
 
@@ -52,7 +51,7 @@ class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
     user_id: str | None = None
-    model: str = "qwen2.5"
+    model: str = "qwen3.5:4b"
     stream: bool = False
     context_tags: list[str] | None = None
     images: list[str] | None = None  # Images for current turn

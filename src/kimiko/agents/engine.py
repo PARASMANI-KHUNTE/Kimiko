@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import structlog
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 
 from kimiko.agents.prompts import REACT_SYSTEM_PROMPT, TOOL_TEMPLATE
 from kimiko.agents.state import AgentState
 from kimiko.services.llm import get_llm_service
-from kimiko.tools.registry import ToolRegistry
 from kimiko.tools.executor import ToolExecutor
+from kimiko.tools.registry import ToolRegistry
 
 logger = structlog.get_logger(__name__)
 
@@ -23,9 +23,9 @@ class AgentEngine:
     """Core reasoning engine using LangGraph to implement ReAct or Plan-Execute loops."""
 
     def __init__(
-        self, 
+        self,
         tool_registry: ToolRegistry,
-        executor: Optional[ToolExecutor] = None,
+        executor: ToolExecutor | None = None,
         max_steps: int = 5
     ) -> None:
         self.registry = tool_registry
@@ -43,7 +43,7 @@ class AgentEngine:
 
         # Edges
         workflow.set_entry_point("reason")
-        
+
         # Conditional edges from reason
         workflow.add_conditional_edges(
             "reason",
@@ -53,7 +53,7 @@ class AgentEngine:
                 "end": END
             }
         )
-        
+
         # Act always goes back to reason
         workflow.add_edge("act", "reason")
 
@@ -65,21 +65,21 @@ class AgentEngine:
             return "end"
         return "continue"
 
-    async def reason(self, state: AgentState) -> Dict[str, Any]:
+    async def reason(self, state: AgentState) -> dict[str, Any]:
         """Reasoning node: Calls LLM to determine the next step."""
         llm = get_llm_service()
-        
+
         # Format tool descriptions for the prompt
         tools = self.registry.list_tools()
         tools_description = "\n".join([
             TOOL_TEMPLATE.format(
-                name=t.name, 
-                description=t.description, 
+                name=t.name,
+                description=t.description,
                 schema=t.args_schema.model_json_schema() if t.args_schema else "{}"
             )
             for t in tools
         ])
-        
+
         try:
             system_content = REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
         except KeyError as e:
@@ -87,28 +87,30 @@ class AgentEngine:
             system_content = REACT_SYSTEM_PROMPT.replace("{tools_description}", tools_description)
 
         system_msg = SystemMessage(content=system_content)
-        
+
         # Prepare messages for LLM (User and Assistant turns)
         messages = state["messages"]
-        
+
         # Convert to string prompt
         prompt = ""
         for m in messages:
             role = "Assistant" if isinstance(m, AIMessage) else "User"
             prompt += f"{role}: {m.content}\n"
-        
-        prompt += "Assistant: Thought:" 
-        
+
+        prompt += "Assistant: Thought:"
+
         logger.info("agent_reasoning_start", step=state["step_count"] + 1)
-        
+
         # Use new structured generate API
-        model_name = state.get("model", "qwen2.5")
+        from kimiko.config import get_settings
+
+        settings = get_settings()
+        model_name = state.get("model") or settings.default_model
         has_images = bool(state.get("images"))
         if has_images:
-            # Check for a specific vision model in settings or default to qwen2.5vl
-            from kimiko.config import get_settings
-            settings = get_settings()
-            model_name = getattr(settings, "os_vision_model", "qwen2.5vl")
+            # Prefer a dedicated vision model when configured; the default
+            # Qwen 3.5 model is multimodal, so this usually resolves to it.
+            model_name = getattr(settings, "os_vision_model", settings.default_model)
 
         try:
             system_content = REACT_SYSTEM_PROMPT.format(tools_description=tools_description)
@@ -127,11 +129,11 @@ class AgentEngine:
                 stop=["Observation:", "Observation :"]
             )
         except Exception:
-            if has_images and model_name != "qwen2.5":
+            if has_images and model_name != settings.default_model:
                 # Vision model unavailable (OOM or not found), fall back to text model
                 logger.warning("vision_model_unavailable_fallback", model=model_name)
                 response = await llm.generate(
-                    model="qwen2.5",
+                    model=settings.default_model,
                     prompt=prompt,
                     system=REACT_SYSTEM_PROMPT.format(tools_description=tools_description),
                     images=None,  # Drop images for the text model
@@ -141,27 +143,27 @@ class AgentEngine:
             else:
                 raise
 
-        
+
         text = response.get("response", "")
         full_text = "Thought:" + text # Restore prefix deleted for prompt engineering
-        
+
         logger.debug("agent_raw_output", full_text=full_text)
-        
+
         # Parse Thought / Action / Final Answer
         thought_match = re.search(r"Thought:(.*?)(?=Action:|Final Answer:|$)", full_text, re.S)
         action_match = re.search(r"Action:\s*(.*)", full_text)
         action_input_match = re.search(r"Action Input:.*?({.*})", full_text, re.S)
         final_answer_match = re.search(r"Final Answer:\s*(.*)", full_text, re.S)
-        
+
         thought = thought_match.group(1).strip() if thought_match else ""
-        
+
         updates = {
             "thought": thought,
             "messages": [AIMessage(content=full_text)],
             "step_count": state["step_count"] + 1,
             "trace": (state.get("trace") or []) + [f"Thought: {thought}"]
         }
-        
+
         # PRIORITIZE ACTION OVER FINAL ANSWER
         # This prevents hallucinated "Observation: ... Final Answer: ..." blocks from bypassing the actual tool call.
         if action_match:
@@ -176,12 +178,12 @@ class AgentEngine:
                     input_str = input_str[3:]
                 if input_str.endswith("```"):
                     input_str = input_str[:-3]
-                
+
                 updates["action_input"] = json.loads(input_str.strip())
             except json.JSONDecodeError:
                 updates["action_input"] = {}
             updates["next_step"] = "act"
-            
+
             logger.info(
                 "agent_step_trace",
                 step=state["step_count"] + 1,
@@ -200,33 +202,33 @@ class AgentEngine:
         else:
             # Fallback — maybe it just stopped without Final Answer
             updates["next_step"] = "end"
-            
+
         return updates
 
-    async def act(self, state: AgentState) -> Dict[str, Any]:
+    async def act(self, state: AgentState) -> dict[str, Any]:
         """Acting node: Executes the selected tool."""
         tool_name = state.get("action")
         tool_input = state.get("action_input", {})
-        
+
         if not tool_name:
             return {"observation": "Error: No action specified."}
-            
+
         tool = self.registry.get_tool(tool_name)
         if not tool:
             return {"observation": f"Error: Tool '{tool_name}' not found."}
-            
+
         observation = await self.executor.execute(tool, **tool_input)
-        
+
         # Add observation back to history
         obs_msg = HumanMessage(content=f"Observation: {observation}")
-        
+
         return {
             "observation": observation,
             "messages": [obs_msg],
             "trace": (state.get("trace") or []) + [f"Observation: {observation}"]
         }
 
-    async def run(self, goal: str, history: List[BaseMessage] | None = None, images: list[str] | None = None) -> tuple[str, list[str]]:
+    async def run(self, goal: str, history: list[BaseMessage] | None = None, images: list[str] | None = None) -> tuple[str, list[str]]:
         """Run the agent until it reaches a conclusion or max steps."""
         initial_state: AgentState = {
             "messages": (history or []) + [HumanMessage(content=goal)],
@@ -239,14 +241,14 @@ class AgentEngine:
             "images": images or [],
             "trace": []
         }
-        
+
         final_state = await self._graph.ainvoke(initial_state)
         trace = final_state.get("trace", [])
-        
+
         # Extract final answer from messages
         last_msg = final_state["messages"][-1].content
         answer = last_msg
         if "Final Answer:" in last_msg:
             answer = last_msg.split("Final Answer:")[-1].strip()
-            
+
         return answer, trace

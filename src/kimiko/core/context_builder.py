@@ -12,7 +12,7 @@ Prompt structure:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -44,7 +44,7 @@ You provide accurate, evidence-based responses. Stay grounded. Stay honest."""
 
 def _build_default_system_prompt() -> str:
     """Build the system prompt with the injected current UTC datetime."""
-    utc_now = datetime.now(timezone.utc)
+    utc_now = datetime.now(UTC)
     date_str = utc_now.strftime("%A, %B %d, %Y")
     time_str = utc_now.strftime("%H:%M UTC")
     return f"{BASE_SYSTEM_PROMPT}\n\nCURRENT DATETIME: {date_str}, {time_str}"
@@ -85,7 +85,7 @@ class ContextBuilder:
                 retrieval_tokens += tokens
 
         budget = self.token_manager.allocate_budget(
-            model, 
+            model,
             knowledge_tokens=retrieval_tokens,
             image_count=len(images) if images else 0
         )
@@ -139,12 +139,12 @@ class ContextBuilder:
         sections.append(f"User: {user_message}")
 
         user_prompt = "\n\n".join(sections)
-        
+
         result = {
             "system": sys_text,
             "prompt": user_prompt,
         }
-        
+
         if images:
             result["images"] = images
 
@@ -158,7 +158,7 @@ class ContextBuilder:
             retrieval_items=len(retrieval_results) if retrieval_results else 0,
             history_messages=len(conversation_history) if conversation_history else 0,
         )
-        
+
         if get_settings().debug_prompt:
             logger.warning(
                 "llm_prompt_debug",
@@ -173,7 +173,7 @@ class ContextBuilder:
         self,
         base_prompt: str | None = None,
         retrieval_results: list[RetrievalResult] | None = None,
-        model: str = "qwen2.5",
+        model: str = "qwen3.5:4b",
     ) -> str:
         """Build just the system prompt with knowledge context (for chat-style APIs)."""
         budget = self.token_manager.allocate_budget(model)
