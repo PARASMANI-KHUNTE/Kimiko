@@ -15,6 +15,16 @@ logger = structlog.get_logger(__name__)
 # ── Model-specific token budgets ──
 # These represent the maximum allocation per context section.
 MODEL_BUDGETS: dict[str, dict[str, int]] = {
+    "qwen3.5": {
+        # Native context is 256K, but a 4B model on a 6 GB GPU stays fast and
+        # accurate with a much smaller working window.
+        "context_window": 32768,
+        "system": 500,
+        "history": 4000,
+        "memories": 1500,
+        "retrieval": 2000,
+        "response": 4000,
+    },
     "qwen2.5": {
         "context_window": 131072,
         "system": 500,
@@ -108,7 +118,7 @@ class TokenManager:
 
     def get_budget(self, model: str) -> dict[str, int]:
         """Get the token budget for a specific model."""
-        # Exact base-name match first (e.g. "qwen2.5:7b" → "qwen2.5").
+        # Exact base-name match first (e.g. "qwen3.5:4b" → "qwen3.5").
         base = model.split(":", 1)[0]
         budget = self._budgets.get(base)
         if budget is not None:
@@ -175,17 +185,17 @@ class TokenManager:
         """
         budget = self.get_budget(model)
         window = budget.pop("context_window")
- 
+
         # Account for images if any
         image_tokens = image_count * self.IMAGE_TOKEN_ESTIMATE
-        
+
         # Dynamic Scaling: Shrink history budget based on image token ratio
         if image_tokens > 0:
             base_history = budget.get("history", 1500)
             # Prevent negative ratio if images exceed context window (clamped)
             ratio = max(0.1, 1.0 - (image_tokens / window))
             budget["history"] = int(base_history * ratio)
-            
+
             # Reduce retrieval slightly as well if image load is massive
             if image_tokens > (window * 0.3):
                 base_retrieval = budget.get("retrieval", 1000)
@@ -206,7 +216,7 @@ class TokenManager:
                 for k in budget:
                     if k != "system":
                         budget[k] = 100
-                        
+
             logger.warning(
                 "budget_scaled_down",
                 model=model,

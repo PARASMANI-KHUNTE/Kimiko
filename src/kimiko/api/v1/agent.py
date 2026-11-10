@@ -27,21 +27,23 @@ async def run_agent_task(
     """
     request_id = structlog.contextvars.get_contextvars().get("request_id")
     session_id = body.session_id or request_id or "default"
-    
+
     logger.info("agent_task_received", goal=body.goal, session_id=session_id)
-    
+
     try:
         # Update engine settings from request
         if body.max_steps:
             orchestrator.agent_engine.max_steps = body.max_steps
-            
+
         if body.images:
             await orchestrator.scheduler.schedule_vision(orchestrator.vision_engine.get_vision_model())
         else:
-            await orchestrator.scheduler.schedule_chat("qwen2.5")
-            
+            from kimiko.config import get_settings
+
+            await orchestrator.scheduler.schedule_chat(get_settings().default_model)
+
         history = await orchestrator.memory.get_conversation(session_id)
-        from langchain_core.messages import HumanMessage, AIMessage
+        from langchain_core.messages import AIMessage, HumanMessage
         lc_history = []
         for m in history:
             if m.role == "user": lc_history.append(HumanMessage(content=m.content))
@@ -52,7 +54,7 @@ async def run_agent_task(
             history=lc_history,
             images=body.images
         )
-        
+
         return AgentTaskResponse(
             id=request_id or "unknown",
             goal=body.goal,

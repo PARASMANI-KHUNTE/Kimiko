@@ -22,18 +22,22 @@ services:
       - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
       - KIMIKO_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kimiko
       - KIMIKO_QDRANT_URL=http://qdrant:6333
-      - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
-      - KIMIKO_DEFAULT_MODEL=qwen2.5
-      - KIMIKO_EMBEDDING_MODEL=nomic-embed-text
+      # Call the Ollama instance running on the host, not the opt-in container.
+      # Override with KIMIKO_DOCKER_OLLAMA_BASE_URL when Ollama lives elsewhere.
+      - KIMIKO_OLLAMA_BASE_URL=${KIMIKO_DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - KIMIKO_DEFAULT_MODEL=${KIMIKO_DEFAULT_MODEL:-qwen3.5:4b}
+      - KIMIKO_EMBEDDING_MODEL=${KIMIKO_EMBEDDING_MODEL:-embeddinggemma-2:270m}
       - KIMIKO_API_SECRET_KEY=${KIMIKO_API_SECRET_KEY}
+    # host.docker.internal is automatic on Docker Desktop; this also covers
+    # Linux hosts where it must be mapped explicitly.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
       qdrant:
-        condition: service_started
-      ollama:
         condition: service_started
     networks:
       - kimiko-net
@@ -93,10 +97,15 @@ services:
       - kimiko-net
     restart: unless-stopped
 
-  # ── Ollama ──
+  # ── Ollama (optional, opt-in) ──
+  # The default stack uses the Ollama installation on the host (usually with
+  # GPU already configured). Enable this service only if you want a container
+  # bundled with the stack:
+  #   docker compose --profile docker-ollama up -d
   ollama:
     image: ollama/ollama:latest
     container_name: kimiko-ollama
+    profiles: ["docker-ollama"]
     ports:
       - "11434:11434"
     volumes:
@@ -127,8 +136,11 @@ services:
       - KIMIKO_CELERY_BROKER_URL=redis://redis:6379/1
       - KIMIKO_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kimiko
       - KIMIKO_QDRANT_URL=http://qdrant:6333
-      - KIMIKO_OLLAMA_BASE_URL=http://ollama:11434
-      - KIMIKO_EMBEDDING_MODEL=nomic-embed-text
+      - KIMIKO_OLLAMA_BASE_URL=${KIMIKO_DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - KIMIKO_DEFAULT_MODEL=${KIMIKO_DEFAULT_MODEL:-qwen3.5:4b}
+      - KIMIKO_EMBEDDING_MODEL=${KIMIKO_EMBEDDING_MODEL:-embeddinggemma-2:270m}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       redis:
         condition: service_healthy

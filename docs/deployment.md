@@ -19,7 +19,7 @@ Kimiko is orchestrated using Docker Compose for consistent local development and
 ### 2. Environment Configuration
 Create a `.env` file in the root directory:
 ```env
-OLLAMA_HOST=http://ollama:11434
+OLLAMA_HOST=http://host.docker.internal:11434
 POSTGRES_URL=postgresql+asyncpg://kimiko:password@db:5432/kimiko
 QDRANT_HOST=qdrant
 REDIS_URL=redis://redis:6379/0
@@ -37,9 +37,10 @@ docker-compose up -d --build
 
 - **`kimiko-api`**: The main FastAPI application serving the REST endpoints.
 - **`kimiko-worker`**: Background task processor (Fact extraction, document indexing).
-- **`ollama`**: Serves the local LLM and embedding models.
+- **`ollama`** *(optional)*: Containerised LLM runtime, enabled with the
+  `docker-ollama` profile. By default Kimiko uses the Ollama running on the host.
 - **`qdrant`**: Vector database for semantic search.
-- **`db` (Postgres)**: Relational storage for memories and facts.
+- **`postgres`**: Relational storage for memories and facts.
 - **`redis`**: High-speed cache for chat sessions.
 
 ---
@@ -88,9 +89,41 @@ Prometheus scrape endpoint is proxied at `/api/metrics` instead.
 
 ## 🔄 Model Initialization
 
-After the first boot, you must pull the required models into Ollama:
+Kimiko talks to whichever Ollama instance `KIMIKO_OLLAMA_BASE_URL` points at.
+The default Compose stack expects Ollama on the host
+(`http://host.docker.internal:11434`) because a host install already has GPU
+access configured. A containerised Ollama is available behind an opt-in profile:
+
 ```bash
-docker exec -it ollama ollama pull qwen2.5
-docker exec -it ollama ollama pull qwen2-vl
-docker exec -it ollama ollama pull nomic-embed-text
+docker compose --profile docker-ollama up -d
 ```
+
+### Recommended models for 6 GB VRAM / 16 GB RAM
+
+| Purpose | Model | Download | Notes |
+| --- | --- | --- | --- |
+| Chat, reasoning, code, tools, vision | `qwen3.5:4b` | ~3.3 GB | Default. Multimodal, 256K context, thinking mode |
+| Embeddings | `embeddinggemma-2:270m` | ~304 MB | 768-d, multilingual + code, 8K context |
+| Quality upgrade (optional) | `qwen3.5:9b` | ~6.6 GB | Better answers; needs partial CPU offload on 6 GB |
+| Code/agent upgrade (optional) | `mimo-v2.6:9b` | ~6.6 GB | Qwen3.5-9B fine-tune for code and agent workflows |
+
+`qwen3-coder:30b` (~19 GB) and other 20B+ models do not fit this hardware and are
+not recommended.
+
+Pull the defaults and point Kimiko at them:
+
+```bash
+ollama pull qwen3.5:4b
+ollama pull embeddinggemma-2:270m
+```
+
+```env
+KIMIKO_DEFAULT_MODEL=qwen3.5:4b
+KIMIKO_EMBEDDING_MODEL=embeddinggemma-2:270m
+KIMIKO_VECTOR_SIZE=768
+```
+
+> **Switching embedding models?** Vectors from different models are not
+> comparable. Recreate the `memories` collection in Qdrant so it is rebuilt with
+> the new model's dimension.
+

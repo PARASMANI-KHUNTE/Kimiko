@@ -283,7 +283,7 @@ class OllamaService(BaseLLMService):
                 if not name:
                     continue
                 names.add(name)
-                # Ollama reports "qwen2.5:7b"; callers usually ask for "qwen2.5".
+                # Ollama reports "qwen3.5:4b"; callers usually ask for "qwen3.5".
                 names.add(name.split(":", 1)[0])
             self._models_cache = models
             self._models_names = frozenset(names)

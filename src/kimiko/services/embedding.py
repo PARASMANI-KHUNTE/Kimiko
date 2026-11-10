@@ -1,7 +1,9 @@
-"""Embedding service — fixed model: nomic-embed-text via Ollama.
+"""Embedding service — text embeddings via Ollama's ``/api/embed`` endpoint.
 
-Single model policy (Fix #4): all embeddings use the same model to ensure
-vector consistency across the system.
+Single model policy (Fix #4): all embeddings use ``settings.embedding_model``
+(EmbeddingGemma 2 by default) so vector dimensions and spaces stay consistent
+across the system. The default model emits 768-d vectors, matching
+``settings.vector_size``.
 
 Performance notes
 -----------------
@@ -31,7 +33,7 @@ logger = structlog.get_logger(__name__)
 
 
 class EmbeddingService:
-    """Generates embeddings via Ollama using nomic-embed-text."""
+    """Generates embeddings via Ollama using ``settings.embedding_model``."""
 
     def __init__(self, base_url: str | None = None) -> None:
         settings = get_settings()
