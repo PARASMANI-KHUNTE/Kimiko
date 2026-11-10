@@ -26,8 +26,26 @@ from kimiko.config import get_settings
 
 logger = structlog.get_logger(__name__)
 
+# Substrings that mark a model as accepting image input. Qwen 3.5, Gemma 3/4,
+# MiMo v2.6 and the classic VL/llava families are multimodal.
 _VISION_KEYWORDS = frozenset(
-    {"llava", "vision", "minicpm", "moondream", "bakllava", "multimodal", "v-", "vl", "qwen2-", "qwen2.5"}
+    {
+        "llava",
+        "vision",
+        "minicpm",
+        "moondream",
+        "bakllava",
+        "multimodal",
+        "v-",
+        "vl",
+        "pixtral",
+        "qwen2-",
+        "qwen2.5",
+        "qwen3.5",
+        "gemma3",
+        "gemma4",
+        "mimo",
+    }
 )
 
 
@@ -265,7 +283,7 @@ class OllamaService(BaseLLMService):
                 if not name:
                     continue
                 names.add(name)
-                # Ollama reports "qwen2.5:7b"; callers usually ask for "qwen2.5".
+                # Ollama reports "qwen3.5:4b"; callers usually ask for "qwen3.5".
                 names.add(name.split(":", 1)[0])
             self._models_cache = models
             self._models_names = frozenset(names)

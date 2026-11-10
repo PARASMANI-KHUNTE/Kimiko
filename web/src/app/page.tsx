@@ -14,7 +14,7 @@ import PageHeader from "@/components/PageHeader";
 
 const SESSION_KEY = "kimiko_session_id";
 const MODEL_KEY = "kimiko_model";
-const DEFAULT_MODEL = "qwen2.5";
+const DEFAULT_MODEL = "qwen3.5:4b";
 
 const SUGGESTIONS = [
     "Explain how the retrieval pipeline works",
@@ -244,17 +244,23 @@ export default function ChatPage() {
                             className="input-modern w-auto min-w-[150px] max-w-[220px] py-2 px-3 text-sm bg-[var(--bg-card)]"
                         >
                             {models.length > 0 ? (
-                                models.map((m) => (
-                                    <option key={m.id} value={m.id} disabled={!m.available}>
-                                        {m.name}
-                                        {m.available ? "" : " (not pulled)"}
-                                    </option>
-                                ))
+                                models
+                                    .filter((m) => m.type !== "embedding")
+                                    .map((m) => (
+                                        <option
+                                            key={m.id}
+                                            value={m.id}
+                                            disabled={!m.available}
+                                        >
+                                            {m.name}
+                                            {m.available ? "" : " (not pulled)"}
+                                        </option>
+                                    ))
                             ) : (
                                 <>
-                                    <option value="qwen2.5">Qwen 2.5</option>
-                                    <option value="deepseek-r1:7b">DeepSeek R1 7B</option>
-                                    <option value="codellama">CodeLlama</option>
+                                    <option value="qwen3.5:4b">Qwen 3.5 4B</option>
+                                    <option value="qwen3.5:9b">Qwen 3.5 9B</option>
+                                    <option value="qwen2.5-coder:3b">Qwen 2.5 Coder 3B</option>
                                     <option value="llama3.2">Llama 3.2</option>
                                 </>
                             )}

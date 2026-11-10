@@ -87,7 +87,7 @@ async function fetchWithTimeout(
 
 export async function sendChat(
     message: string,
-    model: string = "qwen2.5",
+    model: string = "qwen3.5:4b",
     sessionId: string = "web-session"
 ): Promise<ChatResponse> {
     const resp = await fetchWithTimeout(`${API_BASE}/v1/chat`, {
@@ -194,7 +194,7 @@ function parseSseEvent(raw: string): ParsedSse {
 
 export async function* streamChat(
     message: string,
-    model: string = "qwen2.5",
+    model: string = "qwen3.5:4b",
     sessionId: string = "web-session",
     signal?: AbortSignal
 ): AsyncGenerator<string> {

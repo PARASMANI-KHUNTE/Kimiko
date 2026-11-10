@@ -35,9 +35,11 @@ class Settings(BaseSettings):
     debug_prompt: bool = False
 
     # ── Ollama ──
-    ollama_base_url: str = "http://localhost:11434"
-    default_model: str = "qwen2.5"
-    embedding_model: str = "nomic-embed-text"
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    # Qwen 3.5 4B: multimodal, tool-capable, ~3.3 GB — fits a 6 GB GPU.
+    default_model: str = "qwen3.5:4b"
+    # EmbeddingGemma 2 (270M): 768-d, multilingual + code, ~304 MB.
+    embedding_model: str = "embeddinggemma-2:270m"
 
     # ── Performance / caching ──
     # The Ollama model list is cheap but hits the network; cache it briefly.
@@ -82,7 +84,7 @@ class Settings(BaseSettings):
     # ── OS Integration (Phase 7) ──
     os_bridge_url: str = "http://host.docker.internal:8001"
     os_hotkey: str = "ctrl+space"
-    os_model: str = "qwen2.5"  # Default, override with vision model in .env if available
+    os_model: str = "qwen3.5:4b"  # Multimodal default; override in .env if needed
     os_screenshot_quality: int = 70
     os_screenshot_width: int = 1024
 

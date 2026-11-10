@@ -10,20 +10,15 @@ Commands:
 
 from __future__ import annotations
 
-import sys
-import threading
-from typing import Optional
-
 import httpx
 import typer
+from rich import box
 from rich.console import Console
-from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.table import Table
 from rich.prompt import Prompt
-from rich.text import Text
-from rich import box
+from rich.table import Table
+
 from kimiko.config import get_settings
 
 console = Console()
@@ -76,7 +71,7 @@ def status():
 @app.command()
 def ask(
     question: str = typer.Argument(..., help="Your question for Kimiko."),
-    model: str = typer.Option("qwen2.5", help="Model to use."),
+    model: str = typer.Option("qwen3.5:4b", help="Model to use."),
 ):
     """Ask Kimiko a one-shot question."""
     console.print()
@@ -109,7 +104,7 @@ def ask(
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 @app.command()
 def chat(
-    model: str = typer.Option("qwen2.5", help="Model to use."),
+    model: str = typer.Option("qwen3.5:4b", help="Model to use."),
     session: str = typer.Option("cli-session", help="Session ID for memory."),
 ):
     """Start an interactive chat session with Kimiko."""
@@ -271,7 +266,7 @@ def os_agent():
         border_style="cyan",
         box=box.DOUBLE,
     ))
-    
+
     try:
         from kimiko.os.assistant import HotkeyManager
         manager = HotkeyManager()

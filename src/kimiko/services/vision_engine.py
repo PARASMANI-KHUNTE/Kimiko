@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import base64
 import io
-from typing import Any, Dict, List, Optional
 
 import structlog
 from PIL import Image
@@ -18,7 +17,7 @@ class VisionEngine:
     def __init__(
         self,
         max_image_size: tuple[int, int] = (1024, 1024),
-        default_vision_model: str = "qwen2-vl",
+        default_vision_model: str = "qwen3.5:4b",
     ) -> None:
         self.max_image_size = max_image_size
         self.default_vision_model = default_vision_model
@@ -32,12 +31,12 @@ class VisionEngine:
             # 1. Decode
             img_data = base64.b64decode(base64_image)
             img = Image.open(io.BytesIO(img_data))
-            
+
             # 2. Check format
             if img.format not in ["JPEG", "PNG", "WEBP"]:
                 # Attempt to convert to RGB/JPEG
                 img = img.convert("RGB")
-            
+
             # 3. Resize if necessary
             if img.width > self.max_image_size[0] or img.height > self.max_image_size[1]:
                 img.thumbnail(self.max_image_size, Image.Resampling.LANCZOS)
