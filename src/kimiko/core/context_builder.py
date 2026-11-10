@@ -13,6 +13,8 @@ Prompt structure:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
+
 import structlog
 
 from kimiko.config import get_settings
@@ -72,12 +74,16 @@ class ContextBuilder:
         
         Returns a dict with 'system', 'prompt', and optional 'images'.
         """
-        # 0. Pre-calculate Retrieval Tokens for Dynamic Budgeting
+        # 0. Pre-calculate Retrieval Tokens for Dynamic Budgeting.
+        # Tokenize each result once and reuse the counts below.
+        retrieval_entries: list[tuple[str, int]] = []
         retrieval_tokens = 0
         if retrieval_results:
             for r in retrieval_results:
-                retrieval_tokens += self.token_manager.count_tokens(r.text)
- 
+                tokens = self.token_manager.count_tokens(r.text)
+                retrieval_entries.append((r.text, tokens))
+                retrieval_tokens += tokens
+
         budget = self.token_manager.allocate_budget(
             model, 
             knowledge_tokens=retrieval_tokens,
@@ -92,15 +98,21 @@ class ContextBuilder:
 
         # 2. Retrieved knowledge / facts / memories
         if retrieval_results:
-            facts = [r.text for r in retrieval_results if r.source == "fact_store"]
-            memories = [r.text for r in retrieval_results if r.source != "fact_store"]
-            
+            # Keep the precomputed token counts alongside the split.
+            facts: list[str] = []
+            memories: list[tuple[str, int]] = []
+            for r, (text, tokens) in zip(retrieval_results, retrieval_entries):
+                if r.source == "fact_store":
+                    facts.append(text)
+                else:
+                    memories.append((text, tokens))
+
             if facts:
                 fact_section = "\n".join([f"- {f}" for f in facts])
                 sections.append(f"### [USER FACTS]\n{fact_section}")
 
             if memories:
-                knowledge_section = self._build_knowledge_section(
+                knowledge_section = self._build_knowledge_section_from_counts(
                     memories, budget.get("memories", 500)
                 )
                 if knowledge_section:
@@ -156,16 +168,6 @@ class ContextBuilder:
             )
 
         return result
-        
-        # 6. Debug Logging (Fix #2 review round 3)
-        if get_settings().debug_prompt:
-            logger.debug(
-                "llm_prompt_debug",
-                prompt=prompt,
-                model=model,
-            )
-
-        return prompt
 
     def build_system_prompt(
         self,
@@ -191,19 +193,41 @@ class ContextBuilder:
         """Format retrieved knowledge into a prompt section."""
         if not texts:
             return ""
+        entries = [(text, self.token_manager.count_tokens(text)) for text in texts]
+        return self._build_knowledge_section_from_counts(entries, max_tokens)
 
-        section = "Relevant knowledge:\n"
-        remaining = max_tokens - self.token_manager.count_tokens(section)
+    def _build_knowledge_section_from_counts(
+        self, entries: list[tuple[str, int]], max_tokens: int
+    ) -> str:
+        """Build the knowledge section from pre-tokenized ``(text, tokens)``.
 
-        for i, text in enumerate(texts):
-            entry = f"- {text}\n"
-            entry_tokens = self.token_manager.count_tokens(entry)
+        Uses a list + ``join`` instead of repeated ``section += entry`` so the
+        assembly is O(n) rather than O(n²) for large retrieval sets.
+        """
+        if not entries:
+            return ""
+
+        # Hoist the token divisor: this loop runs once per retrieved entry and
+        # a bound-method call per entry is measurable on large result sets. The
+        # arithmetic below mirrors ``TokenManager.count_tokens`` exactly.
+        chars_per_token = self.token_manager.CHARS_PER_TOKEN
+        header = "Relevant knowledge:\n"
+        remaining = max_tokens - (len(header) // chars_per_token + 1)
+        parts: list[str] = [header]
+
+        for text, entry_tokens in entries:
+            # ``entry_tokens`` is a lower bound; count the formatted entry only
+            # when the cheap bound says it might not fit.
             if remaining - entry_tokens < 0:
                 break
-            section += entry
-            remaining -= entry_tokens
+            entry = f"- {text}\n"
+            cost = len(entry) // chars_per_token + 1
+            if remaining - cost < 0:
+                break
+            parts.append(entry)
+            remaining -= cost
 
-        return section.strip()
+        return "".join(parts).strip()
 
     def _build_history_section(self, messages: list[Message]) -> str:
         """Format conversation history into a prompt section."""

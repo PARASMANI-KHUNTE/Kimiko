@@ -108,35 +108,25 @@ export default function ChatPage() {
     setLoading(false);
   };
 
-  // Model type badge colors
-  const typeBadge: Record<string, string> = {
-    chat: "bg-violet-500/20 text-violet-300",
-    code: "bg-blue-500/20 text-blue-300",
-    reasoning: "bg-emerald-500/20 text-emerald-300",
-    vision: "bg-amber-500/20 text-amber-300",
-  };
-
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[var(--bg-primary)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-7 py-4 border-b border-gray-800">
-        <div className="flex flex-col">
-          <h2 className="text-lg font-semibold">💬 Chat with Kimiko</h2>
-          <span className="text-xs text-gray-500 mt-0.5">
-            Active: <span className="text-violet-400 font-medium">{activeModel}</span>
-            {sessionId && (
-              <span className="ml-3 text-gray-600 font-mono text-[10px]">
-                Session: {sessionId.slice(0, 8)}…
-              </span>
-            )}
-          </span>
+      <header className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-lg">
+            🏯
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Kimiko</h2>
+            <span className="text-xs text-[var(--text-muted)] font-medium">{activeModel}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {/* Model selector */}
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="bg-[#1a1a2e] border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 outline-none focus:border-violet-500"
+            className="input-modern w-auto min-w-[180px] py-2 px-3 text-sm bg-[var(--bg-card)]"
           >
             {models.length > 0 ? (
               models.map((m) => (
@@ -156,41 +146,55 @@ export default function ChatPage() {
           {/* New Chat button */}
           <button
             onClick={startNewChat}
-            className="bg-[#1a1a2e] border border-gray-700 hover:border-violet-500 rounded-lg px-3 py-1.5 text-sm text-gray-400 hover:text-violet-400 transition-all"
+            className="btn-secondary text-sm px-3 py-2"
             title="Start a new conversation"
           >
-            ✚ New Chat
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            New Chat
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-7 py-6 space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
         {historyLoading ? (
-          <div className="flex justify-center py-10">
-            <span className="text-gray-500 text-sm animate-pulse">Restoring conversation…</span>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-[var(--text-muted)]">
+              <div className="w-12 h-12 rounded-full border-3 border-[var(--border)] border-t-[var(--accent)] animate-spin mx-auto mb-4" />
+              <p className="text-sm">Restoring conversation…</p>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--accent-muted)] flex items-center justify-center text-3xl mb-4">
+              🏯
+            </div>
+            <h3 className="text-lg font-medium text-[var(--text-primary)] mb-1">Welcome to Kimiko</h3>
+            <p className="text-[var(--text-muted)] text-sm max-w-xs">Start a conversation or select a model to begin.</p>
           </div>
         ) : (
           messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex gap-3 animate-fade-in ${msg.role === "user" ? "justify-end" : ""}`}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""} animate-in fade-in slide-y-2 duration-200`}
             >
               {msg.role === "assistant" && (
-                <div className="w-9 h-9 rounded-full bg-[#1a1a2e] flex items-center justify-center text-lg shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-lg shrink-0 shadow-sm">
                   🏯
                 </div>
               )}
               <div
-                className={`max-w-[75%] px-4 py-3 rounded-xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "user"
-                    ? "bg-gradient-to-r from-violet-600 to-purple-500 text-white"
-                    : "bg-[#1a1a2e] border border-gray-800"
+                className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "user"
+                    ? "bg-[var(--accent)] text-black rounded-br-md"
+                    : "bg-[var(--bg-card)] border border-[var(--border)] rounded-bl-md"
                   }`}
               >
                 {msg.content}
               </div>
               {msg.role === "user" && (
-                <div className="w-9 h-9 rounded-full bg-violet-600 flex items-center justify-center text-sm shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-sm shrink-0 shadow-sm">
                   👤
                 </div>
               )}
@@ -198,16 +202,16 @@ export default function ChatPage() {
           ))
         )}
         {loading && (
-          <div className="flex gap-3 animate-fade-in">
-            <div className="w-9 h-9 rounded-full bg-[#1a1a2e] flex items-center justify-center text-lg shrink-0">
+          <div className="flex gap-3 animate-in fade-in slide-y-2 duration-200">
+            <div className="w-9 h-9 rounded-xl bg-[var(--accent)] flex items-center justify-center text-lg shrink-0 shadow-sm">
               🏯
             </div>
-            <div className="bg-[#1a1a2e] border border-gray-800 px-4 py-3 rounded-xl text-sm">
-              <span className="inline-flex gap-1">
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </span>
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] px-4 py-3 rounded-2xl rounded-bl-md text-sm">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
             </div>
           </div>
         )}
@@ -215,27 +219,37 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="px-7 py-4 border-t border-gray-800 bg-[#111118] flex gap-3">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Type your message… (Shift+Enter for newline)"
-          rows={1}
-          className="flex-1 bg-[#16162a] border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-100 outline-none resize-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(108,99,255,0.3)] transition-all"
-        />
-        <button
-          onClick={handleSend}
-          disabled={loading}
-          className="bg-gradient-to-r from-violet-600 to-purple-500 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:scale-[1.02] hover:shadow-[0_4px_16px_rgba(108,99,255,0.3)] active:scale-[0.98] transition-all disabled:opacity-50"
-        >
-          {loading ? "…" : "Send"}
-        </button>
+      <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-secondary)]/80 backdrop-blur-sm">
+        <div className="flex gap-3">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Message Kimiko… (Shift+Enter for new line)"
+            rows={1}
+            className="flex-1 input-modern resize-none min-h-[48px] bg-[var(--bg-card)]"
+          />
+          <button
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="btn-primary px-6 py-3 min-h-[48px] self-end"
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                Sending…
+              </span>
+            ) : (
+              "Send"
+            )}
+          </button>
+        </div>
+        <p className="text-xs text-[var(--text-muted)] text-right mt-2">Press Enter to send • Shift+Enter for new line</p>
       </div>
     </div>
   );

@@ -7,14 +7,18 @@ Every request flows through here. Corrected pipeline (Fix #1):
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.agents.engine import AgentEngine
+from kimiko.config import get_settings
 from kimiko.core.context_builder import ContextBuilder
 from kimiko.core.intent import IntentClassifier
 from kimiko.core.model_router import ModelRouter
@@ -34,7 +38,7 @@ from kimiko.models.schemas import (
     Role,
     TokenUsage,
 )
-from kimiko.services.llm import LLMServiceError, get_llm_service
+from kimiko.services.llm import get_llm_service
 from kimiko.services.model_scheduler import ModelScheduler
 from kimiko.tools.core import CalculatorTool, FileSystemTool
 from kimiko.tools.registry import ToolRegistry
@@ -47,6 +51,9 @@ from kimiko.tools.automation import AppAutomationTool
 
 # OS Agent Identity
 OS_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+_CITATION_RE = re.compile(r"\[Source:\s*(.*?)\]")
+_INVALID_CITATION_RE = re.compile(r"[^a-z0-9\s_-]+")
 
 logger = structlog.get_logger(__name__)
 
@@ -88,27 +95,53 @@ class RequestOrchestrator:
 
     async def _validate_citations(self, response: str, results: list[Any]) -> str:
         """Heuristic to ensure citations match retrieved sources."""
-        import re
         valid_sources = {r.source.lower() for r in results}
         # Add common aliases
-        if "user_facts" in valid_sources: valid_sources.add("user facts")
-        if "short_term" in valid_sources: valid_sources.add("memory")
-        if "long_term" in valid_sources: valid_sources.add("long-term memory")
-        
-        # Find all [Source: ...] patterns
-        citations = re.findall(r"\[Source:\s*(.*?)\]", response)
-        for c in citations:
-            if c.lower() not in valid_sources:
-                # Meta-hallucination detected: model cited something not in context
-                logger.warning("fabricated_citation_detected", source=c)
-                response = response.replace(f"[Source: {c}]", "")
-        
-        return response
+        if "user_facts" in valid_sources:
+            valid_sources.add("user facts")
+        if "short_term" in valid_sources:
+            valid_sources.add("memory")
+        if "long_term" in valid_sources:
+            valid_sources.add("long-term memory")
+
+        def _replace(match: re.Match[str]) -> str:
+            citation = match.group(1)
+            if citation.lower().strip() in valid_sources:
+                return match.group(0)
+            # Meta-hallucination detected: model cited something not in context
+            logger.warning("fabricated_citation_detected", source=citation)
+            return ""
+
+        # Single regex pass instead of ``findall`` + repeated ``str.replace``.
+        return _CITATION_RE.sub(_replace, response)
+
+    @staticmethod
+    def _lexical_grounding_score(response: str, results: list[Any]) -> float:
+        """Cheap lexical overlap proxy for grounding (no LLM call).
+
+        Returns the fraction of distinctive answer tokens that also appear in
+        the retrieved context. Used for observability; not a hard gate.
+        """
+        if not response or not results:
+            return 0.0
+        context = " ".join(str(r.text) for r in results).lower()
+        context_tokens = {t for t in _INVALID_CITATION_RE.split(context) if len(t) > 3}
+        answer_tokens = {
+            t for t in _INVALID_CITATION_RE.split(response.lower()) if len(t) > 3
+        }
+        if not answer_tokens or not context_tokens:
+            return 0.0
+        return len(answer_tokens & context_tokens) / len(answer_tokens)
 
     async def _verify_grounding(self, response: str, results: list[Any], model: str) -> bool:
-        """Second-pass verification: Does the context support the answer?"""
-        if not results: return False
-        
+        """Second-pass verification: Does the context support the answer?
+
+        This costs a full extra LLM round-trip, so it is opt-in via
+        ``KIMIKO_VERIFY_GROUNDING=true``. The default fast path skips it.
+        """
+        if not results:
+            return False
+
         context_text = "\n".join([f"- {r.text}" for r in results])
         verification_prompt = (
             f"Context:\n{context_text}\n\n"
@@ -117,19 +150,19 @@ class RequestOrchestrator:
             "If it is supported, return exactly: SUPPORTED\n"
             "If it is NOT supported or contains extra info, return exactly: UNSUPPORTED"
         )
-        
+
         try:
             llm = get_llm_service()
             v_result = await llm.generate(
                 model=model,
                 prompt=verification_prompt,
-                temperature=0.0, # Purely deterministic
-                max_tokens=10
+                temperature=0.0,  # Purely deterministic
+                max_tokens=10,
             )
             v_text = v_result.get("response", "").strip().upper()
             return "SUPPORTED" in v_text
         except Exception:
-            return True # Fallback to true if verifier fails
+            return True  # Fallback to true if verifier fails
 
     @staticmethod
     def _passes_dynamic_threshold(item: Any, default_threshold: float) -> bool:
@@ -163,8 +196,10 @@ class RequestOrchestrator:
             from langchain_core.messages import HumanMessage, AIMessage
             lc_history = []
             for m in history[:-1]:
-                if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
-                else: lc_history.append(AIMessage(content=m.content))
+                if m.role == Role.USER:
+                    lc_history.append(HumanMessage(content=m.content))
+                else:
+                    lc_history.append(AIMessage(content=m.content))
 
             response_text, trace = await self.agent_engine.run(
                 goal=user_message,
@@ -196,27 +231,32 @@ class RequestOrchestrator:
         )
 
         intent_result = self.intent_classifier.classify(user_message)
-        model = await self.model_router.route(
-            intent=intent_result.intent,
-            preferred_model=request.model,
-        )
-
         is_complex = len(user_message) > 60 or "?" in user_message
         dynamic_threshold = 0.75 if is_complex else 0.60
-        
-        retrieval_results = await self.retrieval_engine.retrieve(
-            query=user_message,
-            session_id=session_id,
-            user_id=request.user_id,
-            db=db,
-            top_k=5, 
+
+        # Fetch the summary once and share it with retrieval (saves a Redis GET).
+        # Then run retrieval, history, and model routing concurrently: the slow
+        # embedding + vector + SQL work overlaps instead of running serially.
+        conversation_summary = await self.memory.get_conversation_summary(session_id)
+        retrieval_results, conversation_history, model = await asyncio.gather(
+            self.retrieval_engine.retrieve(
+                query=user_message,
+                session_id=session_id,
+                user_id=request.user_id,
+                db=db,
+                top_k=5,
+                conversation_summary=conversation_summary,
+                include_summary=False,
+            ),
+            self.memory.get_conversation(session_id),
+            self.model_router.route(
+                intent=intent_result.intent,
+                preferred_model=request.model,
+            ),
         )
         retrieval_results = [
             r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
         ]
-
-        conversation_history = await self.memory.get_conversation(session_id)
-        conversation_summary = await self.memory.get_conversation_summary(session_id)
 
         prompt_data = self.context_builder.build(
             user_message=user_message,
@@ -259,13 +299,6 @@ class RequestOrchestrator:
             raise
 
         response_text = result.get("response", "")
-        await self.memory.add_message(
-            session_id,
-            Message(role=Role.ASSISTANT, content=response_text),
-            request_id=request_id,
-            user_id=request.user_id
-        )
-
         duration = time.time() - start_time
         logger.info(
             "pipeline_complete",
@@ -274,13 +307,31 @@ class RequestOrchestrator:
             intent=intent_result.intent.value,
             duration=f"{duration:.2f}s",
         )
-        
+
         validated_content = await self._validate_citations(response_text, retrieval_results)
         final_text = validated_content
         if intent_result.intent == Intent.QUESTION and retrieval_results:
-            is_supported = await self._verify_grounding(validated_content, retrieval_results, model)
-            if not is_supported:
-                final_text = "I do not have enough verified information in my memory to answer this question accurately."
+            # Cheap lexical check for observability (no extra LLM call).
+            overlap = self._lexical_grounding_score(validated_content, retrieval_results)
+            if overlap < 0.1:
+                logger.warning(
+                    "low_grounding_overlap",
+                    request_id=request_id,
+                    overlap=round(overlap, 3),
+                )
+            # Opt-in strict verification; off by default because it doubles latency.
+            if get_settings().verify_grounding:
+                is_supported = await self._verify_grounding(validated_content, retrieval_results, model)
+                if not is_supported:
+                    final_text = "I do not have enough verified information in my memory to answer this question accurately."
+
+        # Persist the final answer (after citation cleanup / grounding), not the draft.
+        await self.memory.add_message(
+            session_id,
+            Message(role=Role.ASSISTANT, content=final_text),
+            request_id=request_id,
+            user_id=request.user_id
+        )
 
         return ChatResponse(
             id=request_id,
@@ -301,7 +352,7 @@ class RequestOrchestrator:
         db: AsyncSession | None = None,
         request_id: str | None = None,
         disconnect_event: asyncio.Event | None = None,
-    ) -> AsyncIterator[str]:
+    ) -> AsyncIterator[dict[str, str]]:
         """Process a streaming chat request."""
         try:
             request_id = request_id or str(uuid.uuid4())[:8]
@@ -310,15 +361,24 @@ class RequestOrchestrator:
 
             # ── OS AGENT PATH (Experimental Streaming) ──
             if request.user_id == OS_USER_ID:
-                import json
-                yield f"data: {json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}\n\n"
-                
+                yield {"data": json.dumps({'event': 'thought', 'data': 'Thinking about your request...'})}
+
+                # Persist the user turn before loading history (matches the
+                # non-streaming path and keeps history ordering correct).
+                await self.memory.add_message(
+                    session_id,
+                    Message(role=Role.USER, content=user_message),
+                    request_id=request_id,
+                    user_id=request.user_id,
+                )
                 history = await self.memory.get_conversation(session_id)
                 from langchain_core.messages import HumanMessage, AIMessage
                 lc_history = []
                 for m in history[:-1]:
-                    if m.role == Role.USER: lc_history.append(HumanMessage(content=m.content))
-                    else: lc_history.append(AIMessage(content=m.content))
+                    if m.role == Role.USER:
+                        lc_history.append(HumanMessage(content=m.content))
+                    else:
+                        lc_history.append(AIMessage(content=m.content))
 
                 # Run agent and yield steps as they happen
                 response_text, trace = await self.agent_engine.run(
@@ -328,8 +388,7 @@ class RequestOrchestrator:
                 )
                 
                 for step in trace:
-                    yield f"data: {json.dumps({'event': 'thought', 'data': step})}\n\n"
-                    await asyncio.sleep(0.1)
+                    yield {"data": json.dumps({'event': 'thought', 'data': step})}
 
                 await self.memory.add_message(
                     session_id,
@@ -337,8 +396,8 @@ class RequestOrchestrator:
                     request_id=request_id,
                     user_id=request.user_id
                 )
-                yield f"data: {json.dumps({'event': 'token', 'data': response_text})}\n\n"
-                yield f"data: {json.dumps({'event': 'done'})}\n\n"
+                yield {"data": json.dumps({'event': 'token', 'data': response_text})}
+                yield {"data": json.dumps({'event': 'done'})}
                 return
 
             # ── STANDARD CHAT PATH ──
@@ -346,30 +405,36 @@ class RequestOrchestrator:
                 session_id,
                 Message(role=Role.USER, content=user_message),
                 request_id=request_id,
+                user_id=request.user_id,
             )
 
             intent_result = self.intent_classifier.classify(user_message)
-            model = await self.model_router.route(
-                intent=intent_result.intent,
-                preferred_model=request.model,
-            )
 
             is_complex = len(user_message) > 60 or "?" in user_message
             dynamic_threshold = 0.75 if is_complex else 0.60
 
-            retrieval_results = await self.retrieval_engine.retrieve(
-                query=user_message,
-                session_id=session_id,
-                user_id=request.user_id,
-                db=db,
-                top_k=5,
+            # Same concurrent fetch as the non-streaming path: retrieval,
+            # history, and routing all proceed in parallel.
+            conversation_summary = await self.memory.get_conversation_summary(session_id)
+            retrieval_results, conversation_history, model = await asyncio.gather(
+                self.retrieval_engine.retrieve(
+                    query=user_message,
+                    session_id=session_id,
+                    user_id=request.user_id,
+                    db=db,
+                    top_k=5,
+                    conversation_summary=conversation_summary,
+                    include_summary=False,
+                ),
+                self.memory.get_conversation(session_id),
+                self.model_router.route(
+                    intent=intent_result.intent,
+                    preferred_model=request.model,
+                ),
             )
             retrieval_results = [
                 r for r in retrieval_results if self._passes_dynamic_threshold(r, dynamic_threshold)
             ]
-
-            conversation_history = await self.memory.get_conversation(session_id)
-            conversation_summary = await self.memory.get_conversation_summary(session_id)
 
             prompt_data = self.context_builder.build(
                 user_message=user_message,
@@ -394,17 +459,18 @@ class RequestOrchestrator:
                 max_tokens=request.max_tokens,
             )
 
+            # Collect the raw tokens with a thin wrapper instead of parsing
+            # every SSE frame back from JSON (which doubled JSON work per token).
             collected_tokens: list[str] = []
+
+            async def _tee_tokens(stream: AsyncIterator[str]) -> AsyncIterator[str]:
+                async for token in stream:
+                    collected_tokens.append(token)
+                    yield token
+
             async for sse_event in self.streaming_engine.stream_response(
-                token_stream, model, check_disconnected=disconnect_event
+                _tee_tokens(token_stream), model, check_disconnected=disconnect_event
             ):
-                import json
-                try:
-                    data = json.loads(sse_event.replace("data: ", "").strip())
-                    if data.get("event") == "token":
-                        collected_tokens.append(data.get("data", ""))
-                except (json.JSONDecodeError, ValueError):
-                    pass
                 yield sse_event
 
             full_response = "".join(collected_tokens)
@@ -413,11 +479,11 @@ class RequestOrchestrator:
                     session_id,
                     Message(role=Role.ASSISTANT, content=full_response),
                     request_id=request_id,
+                    user_id=request.user_id,
                 )
         except Exception as e:
             from kimiko.services.llm import ModelNotAvailableError
             if isinstance(e, ModelNotAvailableError):
-                import json
-                yield f"data: {json.dumps({'event': 'error', 'data': f'⚠️ Model not found. Please run `ollama pull {str(e).split()[-1]}`'})}\n\n"
+                yield {"data": json.dumps({'event': 'error', 'data': f'⚠️ Model not found. Please run `ollama pull {str(e).split()[-1]}`'})}
                 return
             raise

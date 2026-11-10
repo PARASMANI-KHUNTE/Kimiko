@@ -12,6 +12,7 @@ from sqlalchemy import (
     Index,
     String,
     Text,
+    desc,
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
@@ -112,6 +113,15 @@ class Memory(Base):
     __table_args__ = (
         Index("ix_memories_user_id", "user_id"),
         Index("ix_memories_type", "memory_type"),
+        # Covers the hot retrieval query:
+        #   WHERE user_id=? AND is_active ORDER BY importance DESC, created_at DESC
+        Index(
+            "ix_memories_user_active_rank",
+            "user_id",
+            "is_active",
+            desc("importance"),
+            desc("created_at"),
+        ),
     )
 
 
@@ -151,6 +161,13 @@ class UserFact(Base):
         Index("ix_user_facts_user_id", "user_id"),
         Index("ix_user_facts_category", "category"),
         Index("ix_user_facts_lookup", "user_id", "category", "fact", unique=True),
+        # Covers get_facts(): WHERE user_id=? AND confidence_score>=? ORDER BY last_seen DESC
+        Index(
+            "ix_user_facts_user_confidence_seen",
+            "user_id",
+            desc("confidence_score"),
+            desc("last_seen"),
+        ),
     )
 
 
@@ -182,4 +199,5 @@ class UserActivity(Base):
     __table_args__ = (
         Index("ix_user_activity_user_id", "user_id"),
         Index("ix_user_activity_timestamp", "timestamp"),
+        Index("ix_user_activity_user_time", "user_id", desc("timestamp")),
     )

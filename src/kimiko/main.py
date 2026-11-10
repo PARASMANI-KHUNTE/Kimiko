@@ -30,20 +30,14 @@ async def lifespan(app: FastAPI):
 
     # ── Startup ──
 
-    # 1. Redis
+    # 1-3. Redis, PostgreSQL, and Qdrant are independent; connect in parallel
+    # so cold starts are not the sum of three sequential handshakes.
     from kimiko.db.redis import init_redis
-    await init_redis()
-    logger.info("redis_connected")
-
-    # 2. PostgreSQL
     from kimiko.db.session import init_db
-    await init_db()
-    logger.info("postgres_connected")
-
-    # 3. Qdrant
     from kimiko.db.qdrant import init_qdrant
-    await init_qdrant()
-    logger.info("qdrant_connected")
+
+    await asyncio.gather(init_redis(), init_db(), init_qdrant())
+    logger.info("datastores_connected")
 
     # 4. LLM Service (Ollama)
     from kimiko.services.llm import init_llm_service

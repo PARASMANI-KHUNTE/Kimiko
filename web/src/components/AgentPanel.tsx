@@ -3,10 +3,6 @@
 import { useState } from "react";
 import { runAgent } from "@/lib/api";
 
-interface TraceStep {
-    text: string;
-}
-
 export default function AgentPanel() {
     const [goal, setGoal] = useState("");
     const [loading, setLoading] = useState(false);
@@ -26,58 +22,70 @@ export default function AgentPanel() {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0f]">
-            <div className="px-7 py-5 border-b border-gray-800">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                    🤖 Agent Task Runner
-                    <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">Beta</span>
-                </h2>
-                <p className="text-xs text-gray-500 mt-1">Run complex tasks involving tools and multi-step reasoning.</p>
-            </div>
+        <div className="flex flex-col h-full bg-[var(--bg-primary)] text-[var(--text-primary)]">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]/80 backdrop-blur-sm sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--accent-muted)] flex items-center justify-center text-lg">
+                        🤖
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Agent Task Runner</h2>
+                        <span className="text-xs text-[var(--text-muted)]">Multi-step reasoning with tools</span>
+                    </div>
+                </div>
+                <span className="badge badge-accent">Beta</span>
+            </header>
 
-            <div className="flex-1 overflow-y-auto p-7 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {/* Input */}
                 <div className="space-y-3">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Goal / Objective</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Goal / Objective</label>
                     <div className="flex gap-3">
                         <input
                             value={goal}
                             onChange={(e) => setGoal(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleRun()}
                             placeholder="e.g. Find news about Kimiko and summarize it..."
-                            className="flex-1 bg-[#16162a] border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-100 outline-none focus:border-violet-500 transition-all"
+                            className="flex-1 input-modern bg-[var(--bg-card)]"
                         />
                         <button
                             onClick={handleRun}
-                            disabled={loading}
-                            className="bg-amber-500 hover:bg-amber-600 text-black font-bold px-6 py-3 rounded-xl text-sm transition-all disabled:opacity-50"
+                            disabled={loading || !goal.trim()}
+                            className="btn-primary px-6 py-3 whitespace-nowrap"
                         >
-                            {loading ? "Running..." : "Run Agent"}
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                                    Running…
+                                </span>
+                            ) : (
+                                "Run Agent"
+                            )}
                         </button>
                     </div>
                 </div>
 
                 {/* Results */}
                 {loading && (
-                    <div className="space-y-4 animate-pulse">
-                        <div className="h-4 bg-gray-800 rounded w-1/4"></div>
-                        <div className="space-y-2">
-                            <div className="h-10 bg-gray-900 rounded-xl"></div>
-                            <div className="h-10 bg-gray-900 rounded-xl"></div>
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="h-4 bg-[var(--bg-elevated)] rounded w-1/4 animate-pulse" />
+                        <div className="space-y-3">
+                            <div className="h-12 bg-[var(--bg-elevated)] rounded-xl animate-pulse" />
+                            <div className="h-12 bg-[var(--bg-elevated)] rounded-xl animate-pulse" />
                         </div>
                     </div>
                 )}
 
                 {result && (
-                    <div className="space-y-6 animate-fade-in">
+                    <div className="space-y-6 animate-in fade-in slide-y-2 duration-200">
                         {/* Steps Trace */}
                         <div className="space-y-3">
-                            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Reasoning Trace</h3>
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Reasoning Trace</h3>
                             <div className="space-y-2">
                                 {result.steps.map((step, i) => (
-                                    <div key={i} className="flex gap-3 bg-[#111118] border border-gray-800 rounded-xl p-4 text-xs leading-relaxed text-gray-300">
-                                        <span className="text-amber-500 font-mono font-bold">STEP {i + 1}</span>
-                                        <p>{step}</p>
+                                    <div key={i} className="card p-4 flex gap-4">
+                                        <span className="text-[var(--accent)] font-mono font-bold text-xs shrink-0">STEP {i + 1}</span>
+                                        <p className="text-sm text-[var(--text-secondary)] leading-relaxed flex-1">{step}</p>
                                     </div>
                                 ))}
                             </div>
@@ -85,14 +93,25 @@ export default function AgentPanel() {
 
                         {/* Final Answer */}
                         <div className="space-y-3">
-                            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Final Conclusion</h3>
-                            <div className="bg-gradient-to-br from-[#1a1a2e] to-[#12121a] border border-violet-500/30 rounded-xl p-6 text-sm leading-relaxed text-gray-100 shadow-xl shadow-violet-500/5">
-                                {result.answer}
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Final Conclusion</h3>
+                            <div className="card-elevated p-6 border-[var(--accent)]">
+                                <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">{result.answer}</p>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {!loading && !result && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--accent-muted)] flex items-center justify-center text-3xl mb-4">
+                            🤖
+                        </div>
+                        <h3 className="text-lg font-medium text-[var(--text-primary)] mb-1">Ready to run tasks</h3>
+                        <p className="text-[var(--text-muted)] text-sm max-w-md">Enter a goal above and click Run Agent to start multi-step reasoning.</p>
                     </div>
                 )}
             </div>
         </div>
     );
 }
+

@@ -40,6 +40,18 @@ class Settings(BaseSettings):
     default_model: str = "qwen2.5"
     embedding_model: str = "nomic-embed-text"
 
+    # ── Performance / caching ──
+    # The Ollama model list is cheap but hits the network; cache it briefly.
+    model_list_cache_ttl: float = 30.0
+    # Query embeddings are deterministic, so repeated queries can be reused.
+    embedding_cache_size: int = 512
+    embedding_cache_ttl: float = 600.0
+    # A second LLM call to verify grounding roughly doubles answer latency.
+    # Off by default; enable for maximum factuality at the cost of speed.
+    verify_grounding: bool = False
+    # Echoing every SQL statement is very expensive and noisy; opt-in only.
+    db_echo: bool = False
+
     # ── Redis ──
     redis_url: str = "redis://localhost:6379/0"
     celery_broker_url: str = "redis://localhost:6379/1"

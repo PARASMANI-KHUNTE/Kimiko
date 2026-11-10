@@ -41,10 +41,12 @@ class MemoryManager:
         user_id: str | None = None
     ) -> None:
         """Add a message to the session conversation history."""
-        await self.short_term.add_message(session_id, message)
+        # ``add_message`` returns the new list length, so we can skip the extra
+        # LLEN round-trip the old ``needs_summarization`` call performed.
+        length = await self.short_term.add_message(session_id, message)
 
-        # Check if summarization is needed
-        if await self.short_term.needs_summarization(session_id):
+        from kimiko.config import get_settings
+        if length >= get_settings().conversation_summary_threshold:
             await self._trigger_summarization(session_id, request_id, user_id)
 
     async def get_conversation(self, session_id: str) -> list[Message]:
@@ -94,6 +96,7 @@ class MemoryManager:
                 user_id=user_id,
                 tags=tags,
                 memory_type=memory_type,
+                importance=importance,
                 metadata={
                     "created_timestamp": created_ts,
                     "memory_id": str(memory.id),

@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
 
 import structlog
-from sqlalchemy import select, update, delete, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from kimiko.models.database import UserFact
@@ -28,27 +27,37 @@ class FactStore:
         self.session = session
 
     async def store_facts(self, user_id: str, facts: list[ExtractedFact]) -> int:
-        """Store extracted facts, handling deduplication and reinforcement."""
+        """Store extracted facts, handling deduplication and reinforcement.
+
+        All existing facts for the user are fetched in a single query and
+        indexed by ``(category, fact)`` so the write path is O(n + m) instead of
+        issuing one SELECT per extracted fact (the previous N+1 pattern).
+        """
+        if not facts:
+            return 0
+
         stored_count = 0
         user_uuid = uuid.UUID(user_id)
-        
-        for fact in facts:
-            # Check for existing fact
-            stmt = select(UserFact).where(
-                and_(
-                    UserFact.user_id == user_uuid,
-                    UserFact.category == fact.category,
-                    UserFact.fact == fact.fact
-                )
-            )
-            result = await self.session.execute(stmt)
-            existing = result.scalar_one_or_none()
 
-            if existing:
+        result = await self.session.execute(
+            select(UserFact).where(UserFact.user_id == user_uuid)
+        )
+        index: dict[tuple[str, str], UserFact] = {
+            (row.category, row.fact): row for row in result.scalars().all()
+        }
+        now = datetime.now(timezone.utc)
+
+        for fact in facts:
+            key = (fact.category, fact.fact)
+            existing = index.get(key)
+
+            if existing is not None:
                 # Reinforce existing fact
-                existing.confidence_score = min(1.0, existing.confidence_score + REINFORCEMENT_BOOST)
+                existing.confidence_score = min(
+                    1.0, existing.confidence_score + REINFORCEMENT_BOOST
+                )
                 existing.verification_count += 1
-                existing.last_seen = datetime.now(timezone.utc)
+                existing.last_seen = now
                 existing.importance = max(existing.importance, fact.importance)
                 logger.debug("fact_reinforced", category=fact.category, fact=fact.fact)
             else:
@@ -59,9 +68,11 @@ class FactStore:
                     fact=fact.fact,
                     importance=fact.importance,
                     confidence_score=1.0,
-                    verification_count=1
+                    verification_count=1,
                 )
                 self.session.add(new_fact)
+                # Also guard against duplicates within the incoming batch.
+                index[key] = new_fact
                 stored_count += 1
                 logger.debug("fact_stored", category=fact.category, fact=fact.fact)
 
@@ -69,9 +80,9 @@ class FactStore:
         return stored_count
 
     async def get_facts(
-        self, user_id: str, category: str | None = None
+        self, user_id: str, category: str | None = None, limit: int | None = None
     ) -> list[UserFact]:
-        """Retrieve all active facts for a user, optionally filtered by category."""
+        """Retrieve active facts for a user, optionally filtered and bounded."""
         user_uuid = uuid.UUID(user_id)
 
         stmt = (
@@ -90,6 +101,8 @@ class FactStore:
         )
         if category:
             stmt = stmt.where(UserFact.category == category)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -114,7 +127,11 @@ class FactStore:
         
         for fact in facts:
             # Ensure timezone awareness
-            last_seen = fact.last_seen.replace(tzinfo=timezone.utc) if fact.last_seen.tzinfo is None else fact.last_seen
+            last_seen = (
+                fact.last_seen.replace(tzinfo=timezone.utc)
+                if fact.last_seen.tzinfo is None
+                else fact.last_seen
+            )
             days_since = max(0, (now - last_seen).days)
             
             if days_since > 0:

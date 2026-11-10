@@ -29,8 +29,14 @@ class ShortTermMemory:
     def _summary_key(self, session_id: str) -> str:
         return f"session:{session_id}:summary"
 
-    async def add_message(self, session_id: str, message: Message) -> None:
-        """Append a message to the session conversation."""
+    async def add_message(self, session_id: str, message: Message) -> int:
+        """Append a message to the session conversation.
+
+        Returns the new list length so callers can decide whether to summarize
+        without an extra ``LLEN`` round-trip.
+
+        ``RPUSH`` + ``EXPIRE`` are pipelined into a single network round-trip.
+        """
         settings = get_settings()
         redis = get_redis()
         key = self._messages_key(session_id)
@@ -42,11 +48,19 @@ class ShortTermMemory:
             "timestamp": (message.timestamp or datetime.utcnow()).isoformat(),
         }
 
-        await redis.rpush(key, json.dumps(raw))
-        await redis.expire(key, settings.session_ttl_seconds)
+        pipe = redis.pipeline(transaction=False)
+        pipe.rpush(key, json.dumps(raw))
+        pipe.expire(key, settings.session_ttl_seconds)
+        results = await pipe.execute()
+        length = int(results[0])
 
-        ACTIVE_SESSIONS.inc()
+        # Count each session once, not once per message (the old code leaked the
+        # gauge upward on every message).
+        if length == 1:
+            ACTIVE_SESSIONS.inc()
+
         logger.debug("short_term_message_added", session_id=session_id, role=message.role)
+        return length
 
     async def get_messages(self, session_id: str) -> list[Message]:
         """Retrieve all messages for a session."""
@@ -79,42 +93,44 @@ class ShortTermMemory:
         settings = get_settings()
         redis = get_redis()
 
-        # Store summary with longer TTL
-        await redis.set(
+        # Store summary + trim in one round-trip. ``LTRIM -keep_recent -1`` is a
+        # no-op when the list is already short, so the LLEN probe was redundant.
+        key = self._messages_key(session_id)
+        keep_recent = 5  # Keep last 5 messages after summarization
+        pipe = redis.pipeline(transaction=False)
+        pipe.set(
             self._summary_key(session_id),
             summary,
             ex=settings.summary_ttl_seconds,
         )
+        pipe.ltrim(key, -keep_recent, -1)
+        await pipe.execute()
 
-        # Keep only the most recent messages after summarization
-        key = self._messages_key(session_id)
-        keep_recent = 5  # Keep last 5 messages after summarization
-        total = await redis.llen(key)
-        if total > keep_recent:
-            await redis.ltrim(key, total - keep_recent, -1)
-
-        logger.info(
-            "conversation_summarized",
-            session_id=session_id,
-            pruned_messages=max(0, total - keep_recent),
-        )
+        logger.info("conversation_summarized", session_id=session_id)
 
     async def get_summary(self, session_id: str) -> str | None:
         """Retrieve conversation summary if it exists."""
         redis = get_redis()
         return await redis.get(self._summary_key(session_id))
 
-    async def needs_summarization(self, session_id: str) -> bool:
-        """Check if conversation has exceeded the summarization threshold."""
+    async def needs_summarization(self, session_id: str, count: int | None = None) -> bool:
+        """Check if conversation has exceeded the summarization threshold.
+
+        Pass ``count`` when the caller already knows the list length (e.g. from
+        :meth:`add_message`) to avoid an extra Redis round-trip.
+        """
         settings = get_settings()
-        count = await self.get_message_count(session_id)
+        if count is None:
+            count = await self.get_message_count(session_id)
         return count >= settings.conversation_summary_threshold
 
     async def clear_session(self, session_id: str) -> None:
         """Delete all data for a session."""
         redis = get_redis()
-        await redis.delete(
+        deleted = await redis.delete(
             self._messages_key(session_id),
             self._summary_key(session_id),
         )
+        if deleted:
+            ACTIVE_SESSIONS.dec()
         logger.info("session_cleared", session_id=session_id)

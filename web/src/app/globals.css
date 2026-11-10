@@ -1,63 +1,172 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #111118;
-    --bg-card: #1a1a2e;
-    --accent: #6c63ff;
-    --accent-secondary: #00d4aa;
+    /* Modern Dark Palette */
+    --bg-primary: #0a0b0f;
+    --bg-secondary: #111318;
+    --bg-card: #161920;
+    --bg-elevated: #1c1f28;
+    --text-primary: #f0f1f4;
+    --text-secondary: #8a8f9a;
+    --text-muted: #5a5f6b;
+    --accent: #ff8c00; /* Modern warm amber */
+    --accent-hover: #ff9f1f;
+    --accent-muted: #ff8c0033;
+    --border: #2a2e38;
+    --border-strong: #3a3f4c;
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
   }
+
+  * {
+    border-radius: 0;
+  }
+}
+
+html {
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
   background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2a40;
-  border-radius: 3px;
+  background: var(--border-strong);
+  border-radius: 4px;
+  border: 2px solid var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555570;
+  background: var(--text-muted);
 }
 
-/* Chat message animation */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Selection */
+::selection {
+  background: var(--accent-muted);
+  color: var(--text-primary);
 }
 
-.animate-fade-in {
-  animation: fadeInUp 0.3s ease forwards;
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #6c63ff, #00d4aa);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Subtle transitions for modern feel */
+button, a, input, textarea, select {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
 }
 
-/* Glow effect */
-.glow-border {
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.3);
+/* Utility classes for modern components */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.card-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0a0b0f;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card);
+  border-color: var(--border-strong);
+}
+
+.input-modern {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.input-modern:focus {
+  border-color: var(--accent);
+  background: var(--bg-card);
+}
+
+.input-modern::placeholder {
+  color: var(--text-muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-accent {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+}
+
+.divider {
+  border-color: var(--border);
 }

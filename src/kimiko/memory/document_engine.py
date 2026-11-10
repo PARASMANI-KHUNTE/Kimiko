@@ -42,27 +42,29 @@ class DocumentEngine:
         chunks = self._chunk_text(text)
         logger.info("document_chunked", path=path, total_chunks=len(chunks))
 
-        # 3. Index chunks in semantic memory
+        # 3. Index chunks in semantic memory — batch embed + one upsert.
         doc_name = os.path.basename(path)
         tags = (tags or []) + ["document", doc_name]
-        
-        indexed_count = 0
-        for i, chunk in enumerate(chunks):
-            metadata = {
+        total_chunks = len(chunks)
+        metadata = [
+            {
                 "source": doc_name,
                 "chunk_index": i,
-                "total_chunks": len(chunks),
+                "total_chunks": total_chunks,
                 "path": path,
             }
-            await self.semantic.index(
-                text=chunk,
-                user_id=user_id,
-                tags=tags,
-                memory_type="document",
-                metadata=metadata,
-                importance=0.8, # Documents are generally important
-            )
-            indexed_count += 1
+            for i in range(total_chunks)
+        ]
+
+        point_ids = await self.semantic.index_many(
+            texts=chunks,
+            user_id=user_id,
+            tags=tags,
+            memory_type="document",
+            importance=0.8,  # Documents are generally important
+            metadata=metadata,
+        )
+        indexed_count = len(point_ids)
 
         logger.info(
             "document_ingestion_complete", 

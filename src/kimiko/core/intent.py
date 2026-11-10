@@ -1,6 +1,10 @@
 """Intent classifier — rule-based + keyword matching for Phase 1.
 
 Classifies incoming user messages into intents before model routing.
+
+Performance: every pattern is compiled once at import time. The previous
+implementation re-ran ``re.findall`` with a string pattern for every intent on
+every request, which repeatedly hit the regex cache and allocated match lists.
 """
 
 from __future__ import annotations
@@ -41,6 +45,12 @@ _INTENT_PATTERNS: dict[Intent, list[str]] = {
     ],
 }
 
+# Compiled once. Tuples are immutable and cheap to iterate.
+_COMPILED_PATTERNS: tuple[tuple[Intent, tuple[re.Pattern[str], ...]], ...] = tuple(
+    (intent, tuple(re.compile(pattern) for pattern in patterns))
+    for intent, patterns in _INTENT_PATTERNS.items()
+)
+
 
 class IntentClassifier:
     """Rule-based intent classifier. Will be upgraded to ML in Phase 2+."""
@@ -49,29 +59,38 @@ class IntentClassifier:
         """Classify the intent of a user message."""
         text_lower = text.lower().strip()
 
-        # Score each intent
-        scores: dict[Intent, float] = {}
+        # A fenced code block is an unambiguous code signal; skip the scan.
+        if "```" in text_lower:
+            return IntentResult(intent=Intent.CODE, confidence=1.0)
 
-        for intent, patterns in _INTENT_PATTERNS.items():
+        best_intent = Intent.CHAT
+        best_score = 0.0
+
+        for intent, patterns in _COMPILED_PATTERNS:
             score = 0.0
             for pattern in patterns:
-                matches = re.findall(pattern, text_lower)
-                score += len(matches) * 0.3
-            scores[intent] = min(score, 1.0)
+                # ``search`` stops at the first match and allocates no match
+                # list, unlike ``findall``. One hit per pattern is enough for
+                # intent selection; cap at 1.0 and move on.
+                if pattern.search(text_lower):
+                    score += 0.3
+                if score >= 1.0:
+                    score = 1.0
+                    break
+            if score > best_score:
+                best_score = score
+                best_intent = intent
+                if score >= 1.0:
+                    break
 
-        # Find highest scoring intent
-        if scores:
-            best_intent = max(scores, key=lambda k: scores[k])
-            best_score = scores[best_intent]
-
-            if best_score > 0:
-                logger.debug(
-                    "intent_classified",
-                    intent=best_intent.value,
-                    confidence=best_score,
-                    text_preview=text_lower[:50],
-                )
-                return IntentResult(intent=best_intent, confidence=best_score)
+        if best_score > 0:
+            logger.debug(
+                "intent_classified",
+                intent=best_intent.value,
+                confidence=best_score,
+                text_preview=text_lower[:50],
+            )
+            return IntentResult(intent=best_intent, confidence=best_score)
 
         # Default to chat
         return IntentResult(intent=Intent.CHAT, confidence=0.5)

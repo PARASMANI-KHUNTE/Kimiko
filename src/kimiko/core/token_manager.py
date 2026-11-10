@@ -108,7 +108,12 @@ class TokenManager:
 
     def get_budget(self, model: str) -> dict[str, int]:
         """Get the token budget for a specific model."""
-        # Match by prefix (e.g., "qwen2.5:7b" matches "qwen2.5")
+        # Exact base-name match first (e.g. "qwen2.5:7b" → "qwen2.5").
+        base = model.split(":", 1)[0]
+        budget = self._budgets.get(base)
+        if budget is not None:
+            return budget.copy()
+        # Then fall back to prefix matching for unusual tags.
         for model_key, budget in self._budgets.items():
             if model.startswith(model_key):
                 return budget.copy()
@@ -126,16 +131,19 @@ class TokenManager:
             return []
 
         # Always keep the last message
-        result = [messages[-1]]
+        kept_reversed = [messages[-1]]
         remaining = max_tokens - self.count_tokens(messages[-1].content) - 4
 
-        # Add older messages from most recent backwards
+        # Walk backwards collecting the newest messages that fit. Appending and
+        # reversing at the end is O(n); the old ``insert(0, ...)`` was O(n²).
         for msg in reversed(messages[:-1]):
             msg_tokens = self.count_tokens(msg.content) + 4
             if remaining - msg_tokens < 0:
                 break
-            result.insert(0, msg)
+            kept_reversed.append(msg)
             remaining -= msg_tokens
+
+        result = kept_reversed[::-1]
 
         if len(result) < len(messages):
             logger.info(

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Optional
 
 import structlog
 from pydantic import BaseModel, Field
@@ -56,10 +55,8 @@ class FactExtractionService:
         if not messages:
             return []
 
-        # Format conversation for prompt
-        conv_text = ""
-        for m in messages:
-            conv_text += f"{m.role}: {m.content}\n"
+        # Format conversation for prompt (join is O(n); repeated += was O(n²)).
+        conv_text = "\n".join(f"{m.role}: {m.content}" for m in messages)
 
         prompt = FACT_EXTRACTION_PROMPT.format(conversation=conv_text)
         

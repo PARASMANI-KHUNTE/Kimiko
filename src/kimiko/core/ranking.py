@@ -41,12 +41,14 @@ class RetrievalRanker:
         self.fact_confidence_weight = fact_confidence_weight
         self.recency_decay = recency_decay
 
-    def compute_recency_score(self, timestamp: float) -> float:
+    def compute_recency_score(self, timestamp: float, now: float | None = None) -> float:
         """Compute recency score with exponential decay.
 
         Returns 1.0 for now, decaying toward 0.0 as age → recency_decay.
+        ``now`` can be passed in when scoring a batch to avoid repeated clock
+        reads and keep every item on the same time base.
         """
-        age = time.time() - timestamp
+        age = (now if now is not None else time.time()) - timestamp
         if age <= 0:
             return 1.0
         # Exponential decay
@@ -59,8 +61,8 @@ class RetrievalRanker:
         """Compute tag overlap score (Jaccard-like)."""
         if not item_tags or not query_tags:
             return 0.0
-        item_set = set(t.lower() for t in item_tags)
-        query_set = set(t.lower() for t in query_tags)
+        item_set = {t.lower() for t in item_tags}
+        query_set = {t.lower() for t in query_tags}
         intersection = item_set & query_set
         union = item_set | query_set
         return len(intersection) / len(union) if union else 0.0
@@ -77,32 +79,43 @@ class RetrievalRanker:
             - metadata.timestamp: float (unix timestamp)
             - metadata.tags: list[str] (optional)
         """
-        query_tags = query_tags or []
+        now = time.time()
+        # Build the query tag set once instead of once per result.
+        query_tag_set = {t.lower() for t in query_tags} if query_tags else set()
         scored = []
 
         for item in results:
-            semantic_score = item.get("score", 0.0)
+            semantic_score = item.get("score", 0.0) or 0.0
 
-            metadata = item.get("metadata", {})
-            timestamp = metadata.get("timestamp", time.time())
-            item_tags = metadata.get("tags", [])
+            metadata = item.get("metadata") or {}
+            timestamp = metadata.get("timestamp")
+            if timestamp is None:
+                timestamp = now
+            item_tags = metadata.get("tags") or []
 
             importance_score = item.get("importance", 0.5)
-            recency_score = self.compute_recency_score(timestamp)
-            tag_score = self.compute_tag_match_score(item_tags, query_tags)
- 
+            recency_score = self.compute_recency_score(timestamp, now)
+
+            if item_tags and query_tag_set:
+                item_tag_set = {t.lower() for t in item_tags}
+                union = item_tag_set | query_tag_set
+                tag_score = len(item_tag_set & query_tag_set) / len(union) if union else 0.0
+            else:
+                tag_score = 0.0
+
             final_score = (
                 self.semantic_weight * semantic_score
                 + self.recency_weight * recency_score
                 + self.tag_weight * tag_score
                 + self.importance_weight * importance_score
             )
-            
+
             # Phase 3.5: Priority Boost for identity and preference facts
             fact_category = item.get("category") or metadata.get("category") or metadata.get("type")
             if fact_category in ("identity", "preference"):
                 final_score += 1.5
 
+            # Mutate a shallow copy; avoids re-reading dict keys during sort.
             scored_item = {**item, "final_score": final_score, "_timestamp": timestamp}
             scored.append(scored_item)
 

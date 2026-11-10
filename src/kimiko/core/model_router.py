@@ -106,12 +106,13 @@ class ModelRouter:
         # 3. Intent-based routing
         intent_model = self._model_map.get(intent, settings.default_model)
 
-        # Prefer warm models to avoid loading latency
+        # Prefer warm models to avoid loading latency (in-process set lookup).
         if await llm.is_model_loaded(intent_model):
             logger.info("model_routed", model=intent_model, reason="intent_warm")
             return intent_model
 
-        if await self._is_available(intent_model):
+        # Cached model-list lookup — no per-request /api/tags round-trip.
+        if await llm.is_available(intent_model):
             logger.info("model_routed", model=intent_model, reason="intent_cold")
             return intent_model
 
@@ -124,12 +125,10 @@ class ModelRouter:
         return settings.default_model
 
     async def _is_available(self, model: str) -> bool:
-        """Check if a model is available in the runtime."""
+        """Check if a model is available in the runtime (cached)."""
         try:
             llm = get_llm_service()
-            models = await llm.list_models()
-            model_names = [m.get("name", "").split(":")[0] for m in models]
-            return model in model_names or any(model in name for name in model_names)
+            return await llm.is_available(model)
         except Exception:
             return False
 

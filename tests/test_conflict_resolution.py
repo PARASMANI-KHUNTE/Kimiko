@@ -61,7 +61,7 @@ class _FakeFactStore:
     def __init__(self, _session) -> None:
         pass
 
-    async def get_facts(self, _user_id: str):
+    async def get_facts(self, _user_id: str, limit: int | None = None):
         base = datetime(2026, 3, 9, 12, 0, 0, tzinfo=timezone.utc)
         # Intentionally return in stale order and with equal last_seen to verify tie-breakers.
         return [
