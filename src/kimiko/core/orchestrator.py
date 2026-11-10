@@ -291,15 +291,39 @@ class RequestOrchestrator:
             from kimiko.services.llm import ModelNotAvailableError
             if isinstance(e, ModelNotAvailableError):
                 logger.error("model_not_found", model=model, error=str(e))
+                # Check if it's a cold start vs. needing pull - check model existence first
+                llm = get_llm_service()
+                try:
+                    from kimiko.services.model_scheduler import ModelScheduler
+                    scheduler = ModelScheduler()
+                    exists_resp = await llm._client.post(f"{scheduler.base_url}/api/show", json={"name": model})
+                    if exists_resp.status_code == 200:
+                        # Model exists but not loaded - cold start, auto-loading in progress
+                        response_content = (
+                            f"⚠️ Model '{model}' is currently loading. "
+                            "This is a one-time cold start. Your VRAM may take a moment to warm up."
+                        )
+                    else:
+                        # Model doesn't exist - needs to be pulled
+                        message = e.args[0] if e.args else str(e)
+                        model_name_to_pull = message.split("/")[-1].strip("'") if "/" in message else model
+                        response_content = (
+                            f"⚠️ Model '{model}' is not available in Ollama. "
+                            f"Please run `ollama pull {model_name_to_pull}` to download it."
+                        )
+                except Exception:
+                    # If we can't check, just show the error message from LLM service
+                    response_content = (
+                        f"⚠️ Model '{model}' is not available. "
+                        f"Please run `ollama pull {model}` to download it."
+                    )
+                
                 return ChatResponse(
                     id=request_id,
                     session_id=session_id,
                     message=Message(
                         role=Role.ASSISTANT,
-                        content=(
-                            f"⚠️ Model '{model}' is not available in Ollama. "
-                            f"Please run `ollama pull {model}` to use this feature."
-                        ),
+                        content=response_content,
                     ),
                     model=model,
                     intent=intent_result.intent.value if 'intent_result' in locals() else "UNKNOWN",
@@ -507,16 +531,46 @@ class RequestOrchestrator:
         except Exception as e:
             from kimiko.services.llm import ModelNotAvailableError
             if isinstance(e, ModelNotAvailableError):
-                yield {
-                    "data": json.dumps(
-                        {
+                # Distinguish between cold start vs. model not found
+                llm = get_llm_service()
+                try:
+                    from kimiko.services.model_scheduler import ModelScheduler
+                    scheduler = ModelScheduler()
+                    exists_resp = await llm._client.post(f"{scheduler.base_url}/api/show", json={"name": model})
+                    if exists_resp.status_code == 200:
+                        # Model exists but not loaded - cold start, auto-loading in progress
+                        response_data = {
                             "event": "error",
                             "data": (
-                                "⚠️ Model not found. Please run "
-                                f"`ollama pull {str(e).split()[-1]}`"
+                                f"⚠️ Model '{model}' is currently loading. "
+                                "This is a one-time cold start. "
+                                "Your VRAM may take a moment to warm up. "
+                                "The service will automatically reconnect once loaded."
                             ),
                         }
-                    )
+                    else:
+                        # Model doesn't exist - needs to be pulled
+                        message = e.args[0] if e.args else str(e)
+                        model_name_to_pull = message.split("/")[-1].strip("'") if "/" in message else model
+                        response_data = {
+                            "event": "error",
+                            "data": (
+                                f"⚠️ Model '{model}' is not available in Ollama. "
+                                f"Please run `ollama pull {model_name_to_pull}` to download it."
+                            ),
+                        }
+                except Exception:
+                    # If we can't check, just show the error message from LLM service
+                    response_data = {
+                        "event": "error",
+                        "data": (
+                            f"⚠️ Model '{model}' is not available. "
+                            f"Please run `ollama pull {model}` to download it."
+                        ),
+                    }
+                
+                yield {
+                    "data": json.dumps(response_data),
                 }
                 return
             raise
