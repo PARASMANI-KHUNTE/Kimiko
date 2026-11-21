@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+import operator
 import os
 from typing import Any, List, Optional, Type
 
@@ -16,13 +18,53 @@ class CalculatorInput(BaseModel):
     expression: str = Field(..., description="The mathematical expression to evaluate (e.g., '2 + 2 * 3').")
 
 
+_SAFE_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
+
+_SAFE_FUNCS = {
+    "abs": abs,
+    "round": round,
+    "min": min,
+    "max": max,
+}
+
+def _safe_eval_ast(node: ast.AST) -> float | int:
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return node.value
+    elif isinstance(node, ast.BinOp):
+        left = _safe_eval_ast(node.left)
+        right = _safe_eval_ast(node.right)
+        op_type = type(node.op)
+        if op_type in _SAFE_OPS:
+            return _SAFE_OPS[op_type](left, right)
+    elif isinstance(node, ast.UnaryOp):
+        operand = _safe_eval_ast(node.operand)
+        op_type = type(node.op)
+        if op_type in _SAFE_OPS:
+            return _SAFE_OPS[op_type](operand)
+    elif isinstance(node, ast.Call):
+        if isinstance(node.func, ast.Name) and node.func.id in _SAFE_FUNCS:
+            args = [_safe_eval_ast(arg) for arg in node.args]
+            return _SAFE_FUNCS[node.func.id](*args)
+    raise ValueError(f"Unsupported or restricted expression component: {ast.dump(node)}")
+
+
 class CalculatorTool(BaseTool):
-    """Simple arithmetic calculator using Python's eval (restricted)."""
+    """Deterministic and safe arithmetic calculator using AST parsing (no eval)."""
 
     def __init__(self) -> None:
         super().__init__(
             name="calculator",
-            description="Evaluate mathematical expressions. Supports +, -, *, /, **, and parentheses.",
+            description="Evaluate mathematical expressions safely. Supports +, -, *, /, **, and parentheses.",
             capabilities=["math"],
         )
 
@@ -31,13 +73,10 @@ class CalculatorTool(BaseTool):
         return CalculatorInput
 
     async def run(self, expression: str) -> str:
-        """Evaluate the expression in a restricted environment."""
+        """Evaluate the expression safely without executing arbitrary Python bytecode."""
         try:
-            # VERY RESTRICTED eval for safety
-            # Only allow basic math
-            allowed_names = {"abs": abs, "round": round, "max": max, "min": min}
-            # Remove any potentially dangerous __builtins__
-            result = eval(expression, {"__builtins__": {}}, allowed_names)
+            tree = ast.parse(expression.strip(), mode="eval")
+            result = _safe_eval_ast(tree.body)
             return str(result)
         except Exception as e:
             return f"Error: Could not evaluate '{expression}'. {str(e)}"
