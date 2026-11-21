@@ -38,7 +38,7 @@ _SAFE_FUNCS = {
 }
 
 def _safe_eval_ast(node: ast.AST) -> float | int:
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
         return node.value
     elif isinstance(node, ast.BinOp):
         left = _safe_eval_ast(node.left)
@@ -53,6 +53,8 @@ def _safe_eval_ast(node: ast.AST) -> float | int:
             return _SAFE_OPS[op_type](operand)
     elif isinstance(node, ast.Call):
         if isinstance(node.func, ast.Name) and node.func.id in _SAFE_FUNCS:
+            if node.keywords:
+                raise ValueError("Keyword arguments are not supported in calculator expressions.")
             args = [_safe_eval_ast(arg) for arg in node.args]
             return _SAFE_FUNCS[node.func.id](*args)
     raise ValueError(f"Unsupported or restricted expression component: {ast.dump(node)}")
