@@ -3,6 +3,9 @@
 import base64
 import io
 import unittest
+import pytest
+
+PIL = pytest.importorskip("PIL")
 from PIL import Image
 from kimiko.services.vision_engine import VisionEngine
 
