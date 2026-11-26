@@ -7,7 +7,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # ── Enums ──
 
@@ -48,7 +48,8 @@ class Message(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = ""
+    messages: list[Message] | None = None
     session_id: str | None = None
     user_id: str | None = None
     model: str = "qwen3.5:4b"
@@ -58,6 +59,30 @@ class ChatRequest(BaseModel):
     temperature: float = Field(default=0.2, ge=0.0, le=2.0)
     top_p: float = Field(default=0.9, ge=0.0, le=1.0)
     max_tokens: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_message_and_messages(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            msgs = data.get("messages")
+            msg = data.get("message")
+            if not msg and msgs and isinstance(msgs, list) and len(msgs) > 0:
+                last_msg = msgs[-1]
+                if hasattr(last_msg, "content"):
+                    data["message"] = last_msg.content
+                elif isinstance(last_msg, dict):
+                    data["message"] = last_msg.get("content", "")
+                elif isinstance(last_msg, str):
+                    data["message"] = last_msg
+            elif msg and not msgs:
+                data["messages"] = [{"role": "user", "content": msg}]
+        return data
+
+    @model_validator(mode="after")
+    def validate_has_content(self) -> ChatRequest:
+        if not self.message and not self.messages:
+            raise ValueError("Either 'message' or 'messages' must be provided.")
+        return self
 
 
 class ChatResponse(BaseModel):

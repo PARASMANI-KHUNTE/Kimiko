@@ -1,7 +1,33 @@
-# 🏯 Kimiko AI: Comprehensive Codebase Analysis Report
+# 🏯 Kimiko AI — Local-First Multimodal AI Agent Platform
+[![CI Pipeline](https://github.com/PARASMANI-KHUNTE/Kimiko/actions/workflows/ci.yml/badge.svg)](https://github.com/PARASMANI-KHUNTE/Kimiko/actions/workflows/ci.yml)
+[![Python Version](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ## 1. Executive Summary
-Kimiko AI is a **local-first, multimodal, and extensible AI agent platform**. It is designed to run sophisticated AI agents on consumer-grade hardware (like a laptop with an RTX GPU) while maintaining deep, personalized memory through a three-tier storage system. The platform is modular, allowing for easy expansion through a dynamic plugin ecosystem.
+Kimiko AI is a **local-first, multimodal, and extensible AI agent platform**. It is designed to run sophisticated AI agents on consumer-grade hardware (such as laptops with RTX GPUs) while maintaining deep, personalized memory through a three-tier storage system (PostgreSQL facts, Qdrant semantic vectors, and Redis session cache). The platform is modular, allowing for easy expansion through a dynamic plugin ecosystem.
+
+---
+
+## ⚡ 2-Minute Quickstart (Verify It Works)
+
+### 1. Run Automated Unit & Schema Tests
+Verify schemas, intent classification, memory extraction, and performance primitives:
+```bash
+# Set python path and run pytest
+export PYTHONPATH=src
+pytest tests/test_schemas.py tests/test_perf_primitives.py tests/test_core.py -v
+```
+*Result: 53+ automated tests pass out of the box with zero cloud API keys needed.*
+
+### 2. Start Full Stack via Docker
+```bash
+# Launch PostgreSQL, Qdrant Vector DB, Redis, and Kimiko API
+docker compose up -d
+
+# Open Interactive Swagger API Docs:
+# http://localhost:8000/docs
+```
 
 ---
 

@@ -3,6 +3,9 @@ import httpx
 import os
 import io
 import base64
+import pytest
+
+PIL = pytest.importorskip("PIL")
 from PIL import Image, ImageDraw
 
 API_URL = os.getenv("API_URL", "http://localhost:8000/v1")
